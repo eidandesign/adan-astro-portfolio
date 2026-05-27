@@ -1,0 +1,33 @@
+{
+  "name": "adan-portfolio-astro",
+  "version": "1.0.0",
+  "description": "Adan Careta - Senior Product Designer Portfolio",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "sanity": "sanity"
+  },
+  "dependencies": {
+    "@astrojs/react": "^3.0.0",
+    "@astrojs/sitemap": "^3.0.0",
+    "@sanity/client": "^6.9.0",
+    "@sanity/image-url": "^1.0.2",
+    "astro": "^4.4.0",
+    "astro-icon": "^1.1.0",
+    "clsx": "^2.0.0",
+    "framer-motion": "^10.16.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sanity": "^3.20.0",
+    "styled-components": "^6.4.2"
+  },
+  "devDependencies": {
+    "@astrojs/tailwind": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5.0.0"
+  }
+}

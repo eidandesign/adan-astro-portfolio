@@ -1,0 +1,177 @@
+---
+import { Layout } from '@/layouts/Layout';
+import { client } from '@/utils/sanity';
+import { urlFor } from '@/utils/sanity';
+
+export async function getStaticPaths() {
+  const projects = await client.fetch(`*[_type == "project"] { slug }`);
+  return projects.map((project: any) => ({
+    params: { slug: project.slug.current },
+  }));
+}
+
+const { slug } = Astro.params;
+
+const project = await client.fetch(
+  `*[_type == "project" && slug.current == $slug][0]`,
+  { slug }
+);
+
+if (!project) {
+  return Astro.redirect('/portfolio');
+}
+---
+
+<Layout 
+  title={`${project.title} - Adan Careta`} 
+  description={project.description}
+>
+  <section class="pt-32 pb-20">
+    {/* Hero Image */}
+    {project.heroImage && (
+      <div class="mb-12">
+        <img
+          src={urlFor(project.heroImage).width(1200).height(600).url()}
+          alt={project.title}
+          class="w-full h-auto rounded-lg"
+        />
+      </div>
+    )}
+
+    <div class="max-w-4xl mx-auto px-6">
+      {/* Header Info */}
+      <div class="mb-12">
+        <div class="mb-4 flex items-center gap-4">
+          <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+            {project.category}
+          </span>
+          <span class="text-gray-600">{project.year}</span>
+        </div>
+
+        <h1 class="text-5xl font-bold text-gray-900 mb-4">{project.title}</h1>
+        
+        {project.client && (
+          <p class="text-xl text-gray-600">{project.client}</p>
+        )}
+      </div>
+
+      {/* Project Meta */}
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16 pb-16 border-b border-gray-200">
+        {project.role && (
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Role</h3>
+            <p class="text-gray-600">{project.role}</p>
+          </div>
+        )}
+
+        {project.team && (
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Team</h3>
+            <p class="text-gray-600">{project.team}</p>
+          </div>
+        )}
+
+        {project.techUsed && project.techUsed.length > 0 && (
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Tools & Tech</h3>
+            <div class="flex flex-wrap gap-2">
+              {project.techUsed.map((tool: string) => (
+                <span key={tool} class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+                  {tool}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {project.year && (
+          <div>
+            <h3 class="font-semibold text-gray-900 mb-2">Year</h3>
+            <p class="text-gray-600">{project.year}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Challenge Section */}
+      {project.challenge && (
+        <div class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-6">Challenge</h2>
+          <div class="prose prose-lg text-gray-600 max-w-none">
+            {/* Render block content */}
+            {project.challenge}
+          </div>
+        </div>
+      )}
+
+      {/* Key Opportunities */}
+      {project.keyOpportunities && (
+        <div class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-6">Key Opportunities</h2>
+          <div class="prose prose-lg text-gray-600 max-w-none">
+            {project.keyOpportunities}
+          </div>
+        </div>
+      )}
+
+      {/* Solution Section */}
+      {project.solution && (
+        <div class="mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-6">Solution</h2>
+          <div class="prose prose-lg text-gray-600 max-w-none">
+            {project.solution}
+          </div>
+        </div>
+      )}
+
+      {/* Images Gallery */}
+      {project.images && project.images.length > 0 && (
+        <div class="my-16">
+          <div class="space-y-8">
+            {project.images.map((image: any) => (
+              <img
+                key={image._key}
+                src={urlFor(image).width(1200).height(600).url()}
+                alt="Project screenshot"
+                class="w-full h-auto rounded-lg"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Impact Section */}
+      {project.impact && (
+        <div class="mb-16 bg-gray-50 p-8 rounded-lg">
+          <h2 class="text-3xl font-bold text-gray-900 mb-6">Impact & Results</h2>
+          <div class="prose prose-lg text-gray-600 max-w-none">
+            {project.impact}
+          </div>
+        </div>
+      )}
+
+      {/* External Link */}
+      {project.caseStudyUrl && (
+        <div class="text-center py-12">
+          <a
+            href={project.caseStudyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-8 py-4 bg-gray-900 text-white rounded-lg font-semibold inline-block hover:bg-gray-800 transition"
+          >
+            View Full Case Study →
+          </a>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div class="mt-20 pt-12 border-t border-gray-200 flex justify-between items-center">
+        <a href="/portfolio" class="text-gray-600 hover:text-gray-900 transition">
+          ← Back to Portfolio
+        </a>
+        <a href="/" class="text-gray-600 hover:text-gray-900 transition">
+          Home
+        </a>
+      </div>
+    </div>
+  </section>
+</Layout>
