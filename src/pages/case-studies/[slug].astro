@@ -515,37 +515,13 @@ const hasNext = next && next.slug !== entry.slug;
       }
 
       @media (max-width: 991px) {
-        .section-header {
-          height: 660px;
-        }
-        .content-header {
-          width: 60%;
-          left: auto;
-          right: 5%;
-          top: 1%;
-          padding: 24px;
-        }
-        .section-wrapper {
-          grid-template-columns: 1fr 1fr;
-        }
-        ._1-columns-text {
-          width: 90%;
-          margin-bottom: 48px;
-        }
-        .div-block-42 {
-          flex-flow: column;
-        }
-        .slider-cs {
-          height: 60vh;
-        }
-      }
-
-      @media (max-width: 767px) {
+        /* Project card flows below the hero image instead of floating over
+           it (it collided with the fixed Home button and got clipped). */
         .section-header {
           height: auto;
         }
         .image-9 {
-          height: 260px;
+          height: 420px;
         }
         .content-header {
           border-radius: 15px;
@@ -555,8 +531,33 @@ const hasNext = next && next.slug !== entry.slug;
           left: 0;
           right: 0;
         }
-        .section-data {
+        .section-wrapper {
+          grid-template-columns: 1fr 1fr;
+        }
+        ._1-columns-text {
+          width: auto;
+          margin: 0 24px 48px;
+        }
+        .div-block-42 {
+          flex-flow: column;
+        }
+        .slider-cs {
+          height: 60vh;
+        }
+        .section-data,
+        .section-designs,
+        .section-conclusions {
           margin-top: 80px;
+          margin-bottom: 120px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .image-9 {
+          height: 260px;
+        }
+        .section-data {
+          margin-top: 64px;
         }
         .section-wrapper,
         .section-wrapper.no-space,
@@ -572,7 +573,7 @@ const hasNext = next && next.slug !== entry.slug;
         }
         .data-text-box.full-border {
           width: 100%;
-          padding: 40px;
+          padding: 24px;
         }
         .section-wireframes {
           margin-bottom: 89px;

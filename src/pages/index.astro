@@ -106,13 +106,13 @@ const companies = [
         </div>
       </a>
 
-      <div class="menu-button" id="menuButton" aria-label="Menu" role="button" tabindex="0">
+      <button class="menu-button" id="menuButton" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu" type="button">
         <div class="menu-wrapper">
           <div class="top-menu"></div>
           <div class="mid-menu"></div>
           <div class="bot-menu"></div>
         </div>
-      </div>
+      </button>
 
       <nav role="navigation" class="nav-menu" id="navMenu">
         <div class="nav-items">
@@ -355,9 +355,11 @@ const companies = [
 
       gsap.registerPlugin(ScrollTrigger);
 
+      const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
       /* ---------- Typewriter (ported from live site) ---------- */
       function typewriter(el: HTMLElement | null, words: string[]) {
-        if (!el) return;
+        if (!el || reduceMotion) return;
         const typingPerLetter = 0.15;
         const deletingPerLetter = 0.1;
         const pauseBetween = 1.5;
@@ -427,10 +429,13 @@ const companies = [
       const menuButton = document.getElementById("menuButton");
       const navMenu = document.getElementById("navMenu");
       if (menuButton && navMenu) {
-        const toggle = () => {
-          const open = navMenu.classList.toggle("open");
+        const setOpen = (open: boolean) => {
+          navMenu.classList.toggle("open", open);
           menuButton.classList.toggle("open", open);
-          if (open) {
+          menuButton.setAttribute("aria-expanded", String(open));
+          menuButton.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+          document.documentElement.style.overflow = open ? "hidden" : "";
+          if (open && !reduceMotion) {
             gsap.fromTo(
               navMenu.querySelectorAll(".navbar-item"),
               { y: 60, opacity: 0 },
@@ -438,13 +443,14 @@ const companies = [
             );
           }
         };
-        menuButton.addEventListener("click", toggle);
-        navMenu.querySelectorAll("a").forEach((a) =>
-          a.addEventListener("click", () => {
-            navMenu.classList.remove("open");
-            menuButton.classList.remove("open");
-          })
-        );
+        menuButton.addEventListener("click", () => setOpen(!navMenu.classList.contains("open")));
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && navMenu.classList.contains("open")) {
+            setOpen(false);
+            menuButton.focus();
+          }
+        });
+        navMenu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setOpen(false)));
       }
 
       /* ---------- GSAP: hero load-in ---------- */
@@ -454,18 +460,20 @@ const companies = [
           : document.getElementById("heroBlock");
       if (visibleHero) {
         gsap.set(visibleHero, { opacity: 1 });
-        const lines = visibleHero.querySelectorAll("span.title, span.text-changing, .div-block-2, .div-block-44");
-        gsap.from(lines, {
-          y: 80,
-          opacity: 0,
-          duration: 1.1,
-          stagger: 0.12,
-          ease: "power3.out",
-          delay: 0.15,
-        });
-        const pic = visibleHero.querySelector(".hero-picture, .hero-picture-mobile");
-        if (pic) {
-          gsap.from(pic, { scale: 0, rotation: -12, duration: 1.2, ease: "back.out(1.6)", delay: 0.7 });
+        if (!reduceMotion) {
+          const lines = visibleHero.querySelectorAll("span.title, span.text-changing, .div-block-2, .div-block-44");
+          gsap.from(lines, {
+            y: 80,
+            opacity: 0,
+            duration: 1.1,
+            stagger: 0.12,
+            ease: "power3.out",
+            delay: 0.15,
+          });
+          const pic = visibleHero.querySelector(".hero-picture, .hero-picture-mobile");
+          if (pic) {
+            gsap.from(pic, { scale: 0, rotation: -12, duration: 1.2, ease: "back.out(1.6)", delay: 0.7 });
+          }
         }
       }
       // Fallback: make sure both hero blocks are visible even if detection failed
@@ -475,7 +483,7 @@ const companies = [
 
       /* ---------- GSAP: gradient blob drift + hero parallax ---------- */
       const gradient = document.getElementById("heroGradient");
-      if (gradient) {
+      if (gradient && !reduceMotion) {
         gsap.to(gradient, {
           x: -60,
           y: 50,
@@ -486,7 +494,7 @@ const companies = [
           ease: "sine.inOut",
         });
       }
-      document.querySelectorAll<HTMLElement>(".section-hero, .section-hero-mobile").forEach((hero) => {
+      if (!reduceMotion) document.querySelectorAll<HTMLElement>(".section-hero, .section-hero-mobile").forEach((hero) => {
         const block = hero.querySelector(".flex-block, .flex-block-mobile");
         if (!block) return;
         gsap.to(block, {
@@ -499,7 +507,7 @@ const companies = [
 
       /* ---------- GSAP: sticky quote-grid choreography ---------- */
       const quoteSection = document.getElementById("quoteSection");
-      if (quoteSection) {
+      if (quoteSection && !reduceMotion) {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: quoteSection,
@@ -546,7 +554,7 @@ const companies = [
       });
 
       /* ---------- GSAP: case-study image parallax ---------- */
-      document.querySelectorAll<HTMLElement>("[data-parallax]").forEach((img) => {
+      if (!reduceMotion) document.querySelectorAll<HTMLElement>("[data-parallax]").forEach((img) => {
         gsap.fromTo(
           img,
           { yPercent: -18 },
@@ -559,7 +567,7 @@ const companies = [
       });
 
       /* ---------- GSAP: horizontal text effect ---------- */
-      document.querySelectorAll<HTMLElement>("[data-marquee]").forEach((el) => {
+      if (!reduceMotion) document.querySelectorAll<HTMLElement>("[data-marquee]").forEach((el) => {
         const dir = el.dataset.marquee === "left" ? 1 : -1;
         gsap.fromTo(
           el,
@@ -574,7 +582,7 @@ const companies = [
 
       /* ---------- GSAP: company grid stagger ---------- */
       const companyItems = document.querySelectorAll("[data-company]");
-      if (companyItems.length) {
+      if (companyItems.length && !reduceMotion) {
         gsap.from(companyItems, {
           opacity: 0,
           y: 30,
