@@ -4,10 +4,13 @@ import sitemap from '@astrojs/sitemap';
 import tailwind from '@astrojs/tailwind';
 
 export default defineConfig({
-  site: 'https://adancareta.com',
+  site: 'https://www.adancareta.com',
   integrations: [
     react(),
-    sitemap(),
+    sitemap({
+      // /contact and /portfolio are redirect stubs — keep them out of the sitemap
+      filter: (page) => !page.endsWith('/contact/') && !page.endsWith('/portfolio/'),
+    }),
     tailwind({
       applyBaseStyles: false,
     }),

@@ -1,0 +1,36 @@
+---
+import SEO from "../components/SEO.astro";
+import "../styles/site.css";
+---
+
+<html lang="en">
+  <head>
+    <SEO title="Page not found — Adan Careta" description="This page doesn't exist. Head back to the portfolio of Adan Careta, product designer." />
+    <meta name="robots" content="noindex" />
+  </head>
+  <body class="body">
+    <main class="not-found">
+      <div class="labels">404</div>
+      <h1 class="title xl center">This page drifted off&nbsp;course</h1>
+      <p class="paragraph big">The page you're looking for doesn't exist or was moved.</p>
+      <a href="/" class="button-big">Back to Home</a>
+    </main>
+
+    <style>
+      .not-found {
+        min-height: 100vh;
+        display: flex;
+        flex-flow: column;
+        gap: 24px;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 24px;
+      }
+      .not-found .labels {
+        width: auto;
+        text-align: center;
+      }
+    </style>
+  </body>
+</html>

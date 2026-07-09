@@ -1,31 +1,5 @@
 ---
-import { Layout } from '@/layouts/Layout';
-import { ContactForm } from '@/components/ContactForm';
-import { client, CONTACT_INFO } from '@/utils/sanity';
-
-const contactInfo = await client.fetch(CONTACT_INFO).catch(() => null);
+// Contact lives in the homepage "Let's Connect" section (matches the live site).
+// This route only exists to catch old links.
+return Astro.redirect("/#letsconnect");
 ---
-
-<Layout 
-  title="Contact - Adan Careta" 
-  description="Get in touch with me. Let's discuss your project ideas."
->
-  <section class="pt-32 pb-20">
-    <div class="max-w-7xl mx-auto px-6">
-      {/* Header */}
-      <div class="text-center mb-16">
-        <h1 class="text-5xl font-bold text-gray-900 mb-6">Let's Work Together</h1>
-        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-          I'm always interested in hearing about new projects and opportunities. Feel free to reach out!
-        </p>
-      </div>
-
-      {/* Contact Form */}
-      <ContactForm 
-        email={contactInfo?.email || 'design.adan@gmail.com'}
-        calendlyUrl={contactInfo?.calendlyUrl || 'https://calendly.com/adan'}
-        client:load
-      />
-    </div>
-  </section>
-</Layout>

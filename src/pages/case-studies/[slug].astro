@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import ConnectSection from "../../components/ConnectSection.astro";
+import SEO from "../../components/SEO.astro";
 import "../../styles/site.css";
 
 export async function getStaticPaths() {
@@ -19,11 +20,18 @@ const hasNext = next && next.slug !== entry.slug;
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{cs.title} — Adan Careta</title>
-    <meta name="description" content={cs.description} />
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <SEO title={`${cs.title} — ${cs.subtitle} | Adan Careta`} description={cs.description} image={cs.heroImage} type="article" />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: cs.title,
+      headline: `${cs.title} — ${cs.subtitle}`,
+      description: cs.description,
+      image: new URL(cs.heroImage, Astro.site).href,
+      url: new URL(Astro.url.pathname, Astro.site).href,
+      author: { "@type": "Person", name: "Adan Careta", url: "https://www.adancareta.com" },
+      genre: "Product Design Case Study",
+    })} />
   </head>
   <body class="body-2">
     <a href="/" class="button-return">
@@ -38,7 +46,7 @@ const hasNext = next && next.slug !== entry.slug;
         <div class="content-project">
           <div class="div-block-36">
             <h1 class="titles medium">{cs.title}</h1>
-            <h1 class="paragraph medium">{cs.subtitle}</h1>
+            <p class="paragraph medium">{cs.subtitle}</p>
           </div>
           {cs.role && (
             <div class="data-text-box last _8-padding">
@@ -94,7 +102,7 @@ const hasNext = next && next.slug !== entry.slug;
       <section class="section-wireframes">
         <div class="div-block-42">
           <div class="_1-columns-text" data-reveal>
-            <h3 class="title medium">{cs.exploration.title}</h3>
+            <h2 class="title medium">{cs.exploration.title}</h2>
             <div class="div-block-47">
               <p class="paragraph medium">{cs.exploration.text}</p>
             </div>
@@ -103,7 +111,7 @@ const hasNext = next && next.slug !== entry.slug;
             <div class="slider-mask">
               {cs.exploration.images.map((img, i) => (
                 <div class={`slide${i === 0 ? " active" : ""}`}>
-                  <img src={img} loading="lazy" alt={`${cs.exploration.title} ${i + 1}`} class="slide-image" />
+                  <img src={img} loading="lazy" alt={`${cs.title} exploration ${i + 1}`} class="slide-image" />
                 </div>
               ))}
             </div>
@@ -121,7 +129,7 @@ const hasNext = next && next.slug !== entry.slug;
     {cs.design && (
       <section class="section-designs">
         <div class="design-text" data-reveal>
-          <h1 class="title xl left">Design</h1>
+          <h2 class="title xl left">Design</h2>
           <div class="data-text-box last design">
             <div class="title big">{cs.design.title}</div>
             <p class="paragraph medium">{cs.design.text}</p>
@@ -144,7 +152,7 @@ const hasNext = next && next.slug !== entry.slug;
       <section class="section-prototype">
         <div class="prototype-item" data-reveal>
           <div class="design-text">
-            <h1 class="title xl left">Prototype</h1>
+            <h2 class="title xl left">Prototype</h2>
             <div class="data-text-box last design">
               <p class="paragraph medium">{cs.prototype.text}</p>
             </div>
@@ -168,7 +176,7 @@ const hasNext = next && next.slug !== entry.slug;
             ))}
           </div>
           <div class="div-block-39" data-reveal>
-            <h1 class="title xl center">Validation &amp; Results</h1>
+            <h2 class="title xl center">Validation &amp; Results</h2>
           </div>
           <div class="section-wrapper no-space">
             {cs.results.slice(2).map((r) => (
@@ -188,7 +196,7 @@ const hasNext = next && next.slug !== entry.slug;
       <section class="section-conclusions">
         <div class="div-block-28">
           <div class="div-block-29" data-reveal>
-            <h1 class="title xl left">Conclusions</h1>
+            <h2 class="title xl left">Conclusions</h2>
           </div>
           <div class="section-wrapper _2">
             {cs.conclusions.map((c, i) => (
@@ -207,10 +215,10 @@ const hasNext = next && next.slug !== entry.slug;
       {hasNext ? (
         <a href={`/case-studies/${next.slug}`} class="next-project-link" data-reveal>
           <div class="labels">Next Project</div>
-          <h1 class="title xl center">{next.data.title}</h1>
+          <h2 class="title xl center">{next.data.title}</h2>
         </a>
       ) : (
-        <h1 class="title xl center" data-reveal>Next Project Soon</h1>
+        <h2 class="title xl center" data-reveal>Next Project Soon</h2>
       )}
     </section>
 

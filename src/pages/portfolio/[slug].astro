@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import ConnectSection from "../../components/ConnectSection.astro";
+import SEO from "../../components/SEO.astro";
 import "../../styles/site.css";
 
 export async function getStaticPaths() {
@@ -14,11 +15,17 @@ const w = entry.data;
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{w.title} — Adan Careta</title>
-    <meta name="description" content={w.description} />
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <SEO title={`${w.title} — Product Design | Adan Careta`} description={w.description} image={w.heroImage} type="article" />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      name: w.title,
+      description: w.description,
+      image: new URL(w.heroImage, Astro.site).href,
+      url: new URL(Astro.url.pathname, Astro.site).href,
+      author: { "@type": "Person", name: "Adan Careta", url: "https://www.adancareta.com" },
+      genre: "Product Design",
+    })} />
   </head>
   <body class="body-3">
     <a href="/" class="button-return">
@@ -33,8 +40,8 @@ const w = entry.data;
           <div class="div-block-52">
             <div class="header-info" id="workHeader">
               <div class="div-block-54">
-                <div class="title xl center">{w.title}</div>
-                <div class="paragraph center">{w.description}</div>
+                <h1 class="title xl center">{w.title}</h1>
+                <p class="paragraph center">{w.description}</p>
               </div>
             </div>
             <img src={w.heroImage} alt={w.title} class="image-12" />
@@ -80,7 +87,7 @@ const w = entry.data;
       <!-- Design visuals card -->
       <div class="visuals">
         <div class="blue-background">
-          <div class="title xl">Design</div>
+          <h2 class="title xl">Design</h2>
           {w.gallery.map((img, i) => (
             <img src={img} loading="lazy" alt={`${w.title} design ${i + 1}`} class={i % 2 === 0 ? "image-13" : "image-14"} data-reveal />
           ))}

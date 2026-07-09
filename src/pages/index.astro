@@ -4,6 +4,7 @@
 
 import { getCollection } from "astro:content";
 import ConnectSection from "../components/ConnectSection.astro";
+import SEO from "../components/SEO.astro";
 import "../styles/site.css";
 
 // Case studies + work cards come from the Markdown CMS (src/content/case-studies/)
@@ -66,15 +67,26 @@ const companies = [
 
 <html lang="en">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Design Services</title>
-    <meta
-      name="description"
-      content="Transform your ideas into reality with my expert product design services. From concept to final product, I will work with you to bring your vision to life. I am a multidisciplinary product designer specializing in creating user-centric experiences through research, empathy, and innovative design. Explore my portfolio to see how I enhance usability and connect with diverse audiences."
+    <SEO
+      title="Adan Careta — Product Designer | Human-Centric Design Solutions"
+      description="Adan Careta is a multidisciplinary product designer creating user-centric digital experiences through research, AI-powered design, and prototyping. Case studies for Stanza, NASA-adjacent SpaceMart, Coca-Cola and more."
     />
-    <link rel="icon" type="image/png" href="/images/favicon.png" />
-    <link rel="apple-touch-icon" href="/images/webclip.jpg" />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "Person",
+      name: "Adan Careta",
+      jobTitle: "Product Designer",
+      url: "https://www.adancareta.com",
+      image: "https://www.adancareta.com/images/og-adan-careta.jpg",
+      email: "mailto:design.adan@gmail.com",
+      address: { "@type": "PostalAddress", addressCountry: "MX" },
+      sameAs: [
+        "https://www.linkedin.com/in/acareta/",
+        "https://www.behance.net/eidan",
+        "https://www.instagram.com/adancaretadg",
+      ],
+      knowsAbout: ["Product Design", "UX/UI Design", "Visual Design", "Art Direction", "Design Systems"],
+    })} />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -83,6 +95,7 @@ const companies = [
     />
   </head>
   <body class="body">
+    <h1 class="sr-only">Adan Careta — Innovative Product Designer with Human-Centric Solutions</h1>
     <!-- NAVBAR -->
     <div class="navbar" role="banner">
       <a href="/" aria-current="page" class="brand">
@@ -147,16 +160,16 @@ const companies = [
       <div class="flex-block" id="heroBlock">
         <div class="gradiend-background" id="heroGradient"></div>
         <div class="line-1">
-          <h1 class="title xxl hero-line">Innovative</h1>
+          <span class="title xxl hero-line">Innovative</span>
           <img loading="eager" src="/images/adancareta_1.avif" alt="Adan Careta" class="hero-picture" />
         </div>
         <div class="flex-below-picture hero-line">
-          <h1 id="typewriter-text" class="text-changing">Product</h1>
-          <h1 class="title xxl">Designer</h1>
+          <span id="typewriter-text" class="text-changing">Product</span>
+          <span class="title xxl">Designer</span>
         </div>
-        <h1 class="title xxl hero-line">with Human-Centric</h1>
+        <span class="title xxl hero-line">with Human-Centric</span>
         <div class="div-block-8 hero-line">
-          <h1 class="title xxl">Solutions</h1>
+          <span class="title xxl">Solutions</span>
           <div class="div-block-2">
             <div class="paragraph big">Helping products thrive with AI-powered design for smarter, functional ideas</div>
           </div>
@@ -169,14 +182,14 @@ const companies = [
       <div class="flex-block-mobile" id="heroBlockMobile">
         <div class="gradiend-background"></div>
         <div class="line-1">
-          <h1 class="title xxl mobile">Innovative</h1>
+          <span class="title xxl mobile">Innovative</span>
           <img loading="eager" src="/images/adancareta_1.avif" alt="Adan Careta" class="hero-picture-mobile" />
         </div>
         <div class="div-block-44">
-          <h1 id="typewriter-text-2" class="text-changing">Product</h1>
+          <span id="typewriter-text-2" class="text-changing">Product</span>
         </div>
-        <h1 class="title xxl mobile">Designer with</h1>
-        <h1 class="title xxl mobile">Human-Centric Solutions</h1>
+        <span class="title xxl mobile">Designer with</span>
+        <span class="title xxl mobile">Human-Centric Solutions</span>
         <div class="div-block-2">
           <div class="paragraph big centered">Helping products grow with AI-enhanced design for smarter, impactful solutions.</div>
         </div>
@@ -233,7 +246,7 @@ const companies = [
         {aboutItems.map((item) => (
           <div class="about-me" data-reveal>
             <div class="labels">{item.number}<br />‍</div>
-            <h1 class="titles medium">{item.title}</h1>
+            <h3 class="titles medium">{item.title}</h3>
             <p class="paragraph big about">{item.description}</p>
           </div>
         ))}
@@ -242,7 +255,7 @@ const companies = [
 
     <!-- CASE STUDIES -->
     <section id="CaseStudies" class="section-studies">
-      <h1 class="title xl center" data-reveal>Case Studies</h1>
+      <h2 class="title xl center" data-reveal>Case Studies</h2>
       <div class="project-div">
         {caseStudies.map(({ slug, data: cs }) => (
           <div class="collection-item">
@@ -293,7 +306,7 @@ const companies = [
 
     <!-- WORK -->
     <section class="section-work">
-      <h1 class="titles big" data-reveal>Work</h1>
+      <h2 class="titles big" data-reveal>Work</h2>
       <div class="collection-list">
         {workCards.map(({ slug, data: card }, i) => (
           <a href={`/portfolio/${slug}`} class="work-card" data-reveal>
@@ -435,14 +448,13 @@ const companies = [
       }
 
       /* ---------- GSAP: hero load-in ---------- */
-      const heroBlock = document.getElementById("heroBlock") || document.getElementById("heroBlockMobile");
       const visibleHero =
         window.getComputedStyle(document.querySelector(".section-hero")!).display === "none"
           ? document.getElementById("heroBlockMobile")
           : document.getElementById("heroBlock");
       if (visibleHero) {
         gsap.set(visibleHero, { opacity: 1 });
-        const lines = visibleHero.querySelectorAll("h1, .div-block-2, .div-block-44");
+        const lines = visibleHero.querySelectorAll("span.title, span.text-changing, .div-block-2, .div-block-44");
         gsap.from(lines, {
           y: 80,
           opacity: 0,
