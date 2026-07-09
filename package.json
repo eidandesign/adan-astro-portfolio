@@ -7,31 +7,18 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro",
-    "sanity": "sanity"
+    "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/react": "^3.0.0",
     "@astrojs/sitemap": "3.2.1",
-    "@sanity/client": "^6.9.0",
-    "@sanity/image-url": "^1.0.2",
     "@splinetool/viewer": "^1.12.98",
     "astro": "^4.4.0",
-    "astro-icon": "^1.1.0",
-    "clsx": "^2.0.0",
-    "framer-motion": "^10.16.0",
     "gsap": "^3.15.0",
-    "lottie-web": "^5.13.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "sanity": "^3.20.0",
-    "styled-components": "^6.4.2"
+    "lottie-web": "^5.13.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.9",
-    "@astrojs/tailwind": "^5.0.0",
     "@types/node": "^20.0.0",
-    "tailwindcss": "^3.3.0",
     "typescript": "^5.9.3"
   }
 }

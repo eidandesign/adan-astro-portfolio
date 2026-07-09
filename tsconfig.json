@@ -1,15 +1,11 @@
 {
   "extends": "astro/tsconfigs/strict",
-  "exclude": ["dist", "node_modules", "sanity", "sanity.config.ts", ".sanity"],
+  "exclude": ["dist", "node_modules"],
   "compilerOptions": {
-    "jsxImportSource": "react",
-    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
       "@components/*": ["src/components/*"],
-      "@layouts/*": ["src/layouts/*"],
-      "@utils/*": ["src/utils/*"],
       "@types/*": ["src/types/*"]
     }
   }
