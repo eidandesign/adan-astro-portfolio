@@ -1,4 +1,5 @@
 import { createClient } from '@sanity/client';
+import imageUrlBuilder from '@sanity/image-url';
 
 const projectId = 'qmzsyvvx';
 const dataset = 'production';
@@ -10,6 +11,16 @@ export const client = createClient({
   apiVersion,
   useCdn: true,
 });
+
+export const CONTACT_INFO = `*[_type == "contactInfo"][0]`;
+
+export const PROJECTS_QUERY = `*[_type == "project"] | order(_createdAt desc)`;
+
+const builder = imageUrlBuilder(client);
+
+export function urlFor(source: any) {
+  return builder.image(source);
+}
 
 export async function getProjects() {
   try {

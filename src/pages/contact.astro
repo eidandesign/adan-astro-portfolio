@@ -3,7 +3,7 @@ import { Layout } from '@/layouts/Layout';
 import { ContactForm } from '@/components/ContactForm';
 import { client, CONTACT_INFO } from '@/utils/sanity';
 
-const contactInfo = await client.fetch(CONTACT_INFO);
+const contactInfo = await client.fetch(CONTACT_INFO).catch(() => null);
 ---
 
 <Layout 

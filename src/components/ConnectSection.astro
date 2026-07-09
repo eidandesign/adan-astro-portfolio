@@ -1,0 +1,80 @@
+---
+// "Let's Connect" section — shared by the homepage and every case study page.
+---
+
+<section class="section-connect">
+  <div id="letsconnect" class="connect-container" data-reveal>
+    <h1 class="title xl left text-dark">Let&#x27;s Connect</h1>
+    <div class="div-block-31">
+      <div class="contact dark-border">
+        <div class="labels dark-text">Contact me</div>
+        <form id="contact-form" name="contact-form" class="form">
+          <div class="contact-field">
+            <label for="name" class="field-label text-dark">nAME</label>
+            <input class="text-field" maxlength="256" name="name" placeholder="Enter your Name" type="text" id="name" required />
+          </div>
+          <div class="contact-field">
+            <label for="from" class="field-label text-dark">I’m from</label>
+            <input class="text-field" maxlength="256" name="from" placeholder="ej. London, Mexico, USA..." type="text" id="from" required />
+          </div>
+          <div class="contact-field">
+            <label for="email" class="field-label text-dark">email</label>
+            <input class="text-field" maxlength="256" name="email" placeholder="ej@mail.com" type="email" id="email" required />
+          </div>
+          <input type="submit" class="submit-button dark" value="Submit" />
+        </form>
+        <div class="form-done" id="formDone">Thank you! Your submission has been received!</div>
+      </div>
+      <div class="follow">
+        <div class="labels white _100 dark-text">Follow</div>
+        <div class="div-block-32">
+          <a href="https://www.linkedin.com/in/acareta/" target="_blank" rel="noopener" class="title xs dartk-text">LinkedIn</a>
+          <a href="https://www.behance.net/eidan" target="_blank" rel="noopener" class="title xs dartk-text">Behance</a>
+          <a href="https://www.instagram.com/adancaretadg" target="_blank" rel="noopener" class="title xs dartk-text">Instagram</a>
+          <div class="title xs soon dark-text">TikTok (soon)</div>
+        </div>
+      </div>
+      <div class="hire-toolkit">
+        <div class="labels white _100 dark-text">Hire toolkit</div>
+        <div class="div-block-32">
+          <a
+            href="https://www.dropbox.com/scl/fi/wtelyms95pxvdatxh0od9/adancaretacv_2024.pdf?rlkey=zyjrztlfzbr56p3o6r6weidqk&st=a6llmwhb&dl=0"
+            target="_blank"
+            rel="noopener"
+            class="title xs dartk-text">Download CV</a
+          >
+          <a
+            href="https://calendly.com/designadan/design-interviews"
+            target="_blank"
+            rel="noopener"
+            class="title xs dartk-text">Schedule Meeting</a
+          >
+          <div class="title xs soon dark-text">Job Expectations (soon)</div>
+          <div class="title xs soon dark-text">Testimonials (soon)</div>
+        </div>
+      </div>
+      <div class="div-block-45">
+        <div class="title copyrights dark-text">© 2025 Adan Careta. All Rights Reserved.</div>
+      </div>
+    </div>
+    <img src="/images/decorative.svg" loading="lazy" width="62.5" alt="" class="image-8" />
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById("contact-form") as HTMLFormElement | null;
+  const formDone = document.getElementById("formDone");
+  if (form && formDone) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const subject = encodeURIComponent(`Hey Adan! — ${data.get("name")} from ${data.get("from")}`);
+      const body = encodeURIComponent(
+        `Name: ${data.get("name")}\nFrom: ${data.get("from")}\nEmail: ${data.get("email")}`
+      );
+      window.location.href = `mailto:design.adan@gmail.com?subject=${subject}&body=${body}`;
+      form.style.display = "none";
+      formDone.classList.add("visible");
+    });
+  }
+</script>

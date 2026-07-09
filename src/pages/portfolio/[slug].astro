@@ -1,177 +1,276 @@
 ---
-import { Layout } from '@/layouts/Layout';
-import { client } from '@/utils/sanity';
-import { urlFor } from '@/utils/sanity';
+import { getCollection } from "astro:content";
+import ConnectSection from "../../components/ConnectSection.astro";
+import "../../styles/site.css";
 
 export async function getStaticPaths() {
-  const projects = await client.fetch(`*[_type == "project"] { slug }`);
-  return projects.map((project: any) => ({
-    params: { slug: project.slug.current },
-  }));
+  const entries = (await getCollection("case-studies")).filter((e) => e.data.kind === "work");
+  return entries.map((entry) => ({ params: { slug: entry.slug }, props: { entry } }));
 }
 
-const { slug } = Astro.params;
-
-const project = await client.fetch(
-  `*[_type == "project" && slug.current == $slug][0]`,
-  { slug }
-);
-
-if (!project) {
-  return Astro.redirect('/portfolio');
-}
+const { entry } = Astro.props;
+const w = entry.data;
 ---
 
-<Layout 
-  title={`${project.title} - Adan Careta`} 
-  description={project.description}
->
-  <section class="pt-32 pb-20">
-    {/* Hero Image */}
-    {project.heroImage && (
-      <div class="mb-12">
-        <img
-          src={urlFor(project.heroImage).width(1200).height(600).url()}
-          alt={project.title}
-          class="w-full h-auto rounded-lg"
-        />
-      </div>
-    )}
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{w.title} — Adan Careta</title>
+    <meta name="description" content={w.description} />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+  </head>
+  <body class="body-3">
+    <a href="/" class="button-return">
+      <img src="/images/back_button.svg" loading="lazy" alt="" />
+      <div class="paragraph">Home</div>
+    </a>
 
-    <div class="max-w-4xl mx-auto px-6">
-      {/* Header Info */}
-      <div class="mb-12">
-        <div class="mb-4 flex items-center gap-4">
-          <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
-            {project.category}
-          </span>
-          <span class="text-gray-600">{project.year}</span>
-        </div>
-
-        <h1 class="text-5xl font-bold text-gray-900 mb-4">{project.title}</h1>
-        
-        {project.client && (
-          <p class="text-xl text-gray-600">{project.client}</p>
-        )}
-      </div>
-
-      {/* Project Meta */}
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16 pb-16 border-b border-gray-200">
-        {project.role && (
-          <div>
-            <h3 class="font-semibold text-gray-900 mb-2">Role</h3>
-            <p class="text-gray-600">{project.role}</p>
-          </div>
-        )}
-
-        {project.team && (
-          <div>
-            <h3 class="font-semibold text-gray-900 mb-2">Team</h3>
-            <p class="text-gray-600">{project.team}</p>
-          </div>
-        )}
-
-        {project.techUsed && project.techUsed.length > 0 && (
-          <div>
-            <h3 class="font-semibold text-gray-900 mb-2">Tools & Tech</h3>
-            <div class="flex flex-wrap gap-2">
-              {project.techUsed.map((tool: string) => (
-                <span key={tool} class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                  {tool}
-                </span>
-              ))}
+    <div class="page-wrapper">
+      <!-- Sticky hero: title + blended hero image; content cards stack over it -->
+      <div class="hero-wrapper">
+        <section class="hero-section">
+          <div class="div-block-52">
+            <div class="header-info" id="workHeader">
+              <div class="div-block-54">
+                <div class="title xl center">{w.title}</div>
+                <div class="paragraph center">{w.description}</div>
+              </div>
             </div>
+            <img src={w.heroImage} alt={w.title} class="image-12" />
           </div>
-        )}
-
-        {project.year && (
-          <div>
-            <h3 class="font-semibold text-gray-900 mb-2">Year</h3>
-            <p class="text-gray-600">{project.year}</p>
-          </div>
-        )}
+        </section>
+        <div class="spacer"></div>
       </div>
 
-      {/* Challenge Section */}
-      {project.challenge && (
-        <div class="mb-16">
-          <h2 class="text-3xl font-bold text-gray-900 mb-6">Challenge</h2>
-          <div class="prose prose-lg text-gray-600 max-w-none">
-            {/* Render block content */}
-            {project.challenge}
+      <!-- Meta + overview card -->
+      <div class="contect-wrapper">
+        <div class="gray-background">
+          <div class="div-block-56">
+            <div class="div-block-57">
+              {w.role && (
+                <div>
+                  <div class="labels">my role</div>
+                  <div class="paragraph xxl">{w.role}</div>
+                </div>
+              )}
+              {w.team && (
+                <div>
+                  <div class="labels">Team</div>
+                  <div class="paragraph xxl">{w.team}</div>
+                </div>
+              )}
+              {w.improvement && (
+                <div>
+                  <div class="labels">What we improve</div>
+                  <div class="paragraph xxl">{w.improvement}</div>
+                </div>
+              )}
+            </div>
+            {w.overview && (
+              <div>
+                <div class="labels">OVERVIEW</div>
+                <div class="paragraph xxl">{w.overview}</div>
+              </div>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* Key Opportunities */}
-      {project.keyOpportunities && (
-        <div class="mb-16">
-          <h2 class="text-3xl font-bold text-gray-900 mb-6">Key Opportunities</h2>
-          <div class="prose prose-lg text-gray-600 max-w-none">
-            {project.keyOpportunities}
-          </div>
+      <!-- Design visuals card -->
+      <div class="visuals">
+        <div class="blue-background">
+          <div class="title xl">Design</div>
+          {w.gallery.map((img, i) => (
+            <img src={img} loading="lazy" alt={`${w.title} design ${i + 1}`} class={i % 2 === 0 ? "image-13" : "image-14"} data-reveal />
+          ))}
+          {w.figma && (
+            <div class="div-block-59" data-reveal>
+              <div class="paragraph xxl">{w.figma.text}</div>
+              <a href={w.figma.url} target="_blank" rel="noopener" class="button-big">{w.figma.label}</a>
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Solution Section */}
-      {project.solution && (
-        <div class="mb-16">
-          <h2 class="text-3xl font-bold text-gray-900 mb-6">Solution</h2>
-          <div class="prose prose-lg text-gray-600 max-w-none">
-            {project.solution}
-          </div>
-        </div>
-      )}
-
-      {/* Images Gallery */}
-      {project.images && project.images.length > 0 && (
-        <div class="my-16">
-          <div class="space-y-8">
-            {project.images.map((image: any) => (
-              <img
-                key={image._key}
-                src={urlFor(image).width(1200).height(600).url()}
-                alt="Project screenshot"
-                class="w-full h-auto rounded-lg"
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Impact Section */}
-      {project.impact && (
-        <div class="mb-16 bg-gray-50 p-8 rounded-lg">
-          <h2 class="text-3xl font-bold text-gray-900 mb-6">Impact & Results</h2>
-          <div class="prose prose-lg text-gray-600 max-w-none">
-            {project.impact}
-          </div>
-        </div>
-      )}
-
-      {/* External Link */}
-      {project.caseStudyUrl && (
-        <div class="text-center py-12">
-          <a
-            href={project.caseStudyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="px-8 py-4 bg-gray-900 text-white rounded-lg font-semibold inline-block hover:bg-gray-800 transition"
-          >
-            View Full Case Study →
-          </a>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <div class="mt-20 pt-12 border-t border-gray-200 flex justify-between items-center">
-        <a href="/portfolio" class="text-gray-600 hover:text-gray-900 transition">
-          ← Back to Portfolio
-        </a>
-        <a href="/" class="text-gray-600 hover:text-gray-900 transition">
-          Home
-        </a>
       </div>
     </div>
-  </section>
-</Layout>
+
+    <ConnectSection />
+
+    <style is:global>
+      /* ============ WORK TEMPLATE (from adan-portfolio.webflow.css) ============ */
+      .body-3 {
+        background-color: var(--surface-background);
+      }
+      .page-wrapper {
+        width: 100%;
+      }
+      .hero-wrapper {
+        z-index: 1;
+        margin-bottom: -100vh;
+        position: relative;
+      }
+      .hero-section {
+        z-index: 0;
+        justify-content: center;
+        align-items: flex-start;
+        width: 100%;
+        min-height: 70vh;
+        position: sticky;
+        top: 0;
+      }
+      .div-block-52 {
+        display: flex;
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: flex-start;
+        width: 100%;
+      }
+      .header-info {
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+        align-items: flex-start;
+        width: 80%;
+        margin-top: 100px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .div-block-54 {
+        display: flex;
+        gap: 16px;
+        flex-flow: column;
+        width: 100%;
+      }
+      .div-block-54 .title.xl.center {
+        width: 100%;
+      }
+      .div-block-54 .paragraph.center {
+        text-align: center;
+      }
+      .image-12 {
+        mix-blend-mode: lighten;
+        object-fit: cover;
+        background-color: #0c1015;
+        border-radius: 30px;
+        width: 90%;
+        height: 70vh;
+        margin-top: 24px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .spacer {
+        height: 110vh;
+        position: relative;
+      }
+      .contect-wrapper {
+        z-index: 2;
+        min-height: 90vh;
+        position: sticky;
+        top: 0;
+      }
+      .gray-background {
+        display: flex;
+        gap: 24px;
+        background-color: #1a1b20;
+        border-radius: 30px;
+        flex-flow: column;
+        justify-content: flex-start;
+        align-items: center;
+        height: 90vh;
+        padding: 200px 56px 80px;
+      }
+      .div-block-56 {
+        display: grid;
+        gap: 40px;
+        grid-template-rows: auto;
+        grid-template-columns: 1fr 1fr;
+        width: 80%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      .div-block-57 {
+        display: flex;
+        gap: 40px;
+        flex-flow: column;
+      }
+      .visuals {
+        z-index: 2;
+        min-height: 100vh;
+        position: sticky;
+        top: 0;
+      }
+      .blue-background {
+        display: flex;
+        gap: 80px;
+        background-color: #0e0f12;
+        border-radius: 30px;
+        flex-flow: column;
+        justify-content: center;
+        align-items: center;
+        padding: 140px 0;
+      }
+      .image-13 {
+        max-width: 50%;
+      }
+      .image-14 {
+        max-width: 50%;
+      }
+      .div-block-59 {
+        display: flex;
+        gap: 30px;
+        flex-flow: column;
+        align-items: center;
+      }
+
+      @media (max-width: 991px) {
+        .gray-background {
+          justify-content: center;
+          align-items: center;
+          height: auto;
+          padding: 56px 23px 56px 12px;
+        }
+        .div-block-56 {
+          grid-template-columns: 1fr;
+        }
+        .blue-background {
+          gap: 40px;
+          min-height: 100vh;
+          padding-top: 80px;
+          padding-bottom: 80px;
+        }
+      }
+
+      @media (max-width: 767px) {
+        .image-12 {
+          height: 50vh;
+        }
+        .image-13,
+        .image-14 {
+          max-width: 80%;
+        }
+      }
+    </style>
+
+    <script>
+      import gsap from "gsap";
+      import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      /* Title + hero image entrance */
+      gsap.from("#workHeader", { y: 60, opacity: 0, duration: 1.1, ease: "power3.out", delay: 0.1 });
+      gsap.from(".image-12", { y: 80, opacity: 0, duration: 1.2, ease: "power3.out", delay: 0.35 });
+
+      /* Generic reveals */
+      document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
+        gsap.to(el, {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: { trigger: el, start: "top 88%", once: true },
+        });
+      });
+    </script>
+  </body>
+</html>
