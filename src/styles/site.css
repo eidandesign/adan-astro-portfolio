@@ -79,19 +79,17 @@
 
 html {
   scroll-behavior: smooth;
-  /* `clip` (not `hidden`) keeps stray overflow from widening the layout
-     viewport on iOS, which pushed position:fixed elements off-screen. */
-  overflow-x: clip;
-}
-
-body {
-  overflow-x: clip;
 }
 
 body.body {
   background-color: var(--surface-background);
   color: var(--text-primary);
   font-family: "Switzer", Arial, sans-serif;
+  /* No overflow-x backstop here: any non-visible overflow on html/body
+     (hidden, clip, or the auto forced by the overflow-x/overflow-y
+     interaction) breaks position:sticky for the quote-grid and about
+     sections in this stack. The actual overflow source is fixed at
+     the root instead — see .text-field and .div-block-31 > *. */
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -704,6 +702,7 @@ img {
   grid-template-columns: 1fr;
   gap: 16px;
   position: relative;
+  background-color: var(--surface-background);
 }
 .about-me {
   display: flex;
@@ -991,12 +990,12 @@ img {
   font-weight: 500;
 }
 .text-field {
+  width: 100%;
+  min-width: 0;
   border: none;
   border-bottom: 1px solid var(--text-oppostive);
   background-color: transparent;
   color: var(--text-oppostive);
-  width: 100%;
-  min-width: 0;
   padding-top: 24px;
   padding-bottom: 24px;
   font-family: "Switzer", Arial, sans-serif;
@@ -1069,38 +1068,23 @@ img {
   width: 62.5px;
 }
 
-/* ============ CLOSING / SPLINE ============ */
+/* ============ CLOSING QUOTE ============ */
 .section-things-that-i-know {
-  justify-content: flex-start;
-  align-items: flex-start;
+  justify-content: center;
+  align-items: center;
   display: flex;
-  position: relative;
-  overflow: hidden;
-}
-.div-block-27 {
-  width: 100%;
-  height: 90vh;
-  overflow: hidden;
-}
-.spline-scene-2 {
-  display: block;
-  width: 100%;
-  height: 100%;
+  padding: 160px 0;
 }
 .div-block-26 {
-  z-index: 0;
   width: 60%;
-  margin-top: 50px;
-  margin-left: 121px;
-  position: absolute;
-  pointer-events: none;
 }
 .last-quote {
   color: var(--text-primary);
-  width: 70%;
+  width: 100%;
   font-family: "Powergrotesk", Arial, sans-serif;
   font-size: 50px;
   line-height: 65px;
+  text-align: center;
 }
 
 /* ============ REVEAL DEFAULTS ============ */
@@ -1463,14 +1447,8 @@ html.gsap-failed [data-reveal] {
     font-size: 16px;
     line-height: 22px;
   }
-  .div-block-27 {
-    height: min(600px, 75svh);
-  }
   .div-block-26 {
     width: 100%;
-    margin-top: 0;
-    margin-left: 0;
-    inset: auto 0 10%;
     padding: 0 24px;
   }
   .last-quote {

@@ -1,6 +1,6 @@
 ---
 // Homepage — faithful rebuild of www.adancareta.com (Webflow) in Astro,
-// with GSAP ScrollTrigger animations and the Spline 3D closing scene.
+// with GSAP ScrollTrigger animations.
 
 import { getCollection } from "astro:content";
 import ConnectSection from "../components/ConnectSection.astro";
@@ -330,15 +330,8 @@ const companies = [
 
     <ConnectSection />
 
-    <!-- CLOSING — SPLINE SCENE + QUOTE -->
+    <!-- CLOSING QUOTE -->
     <section class="section-things-that-i-know">
-      <div class="div-block-27">
-        <spline-viewer
-          class="spline-scene-2"
-          url="https://prod.spline.design/d-cW89-i0lrbtRSn/scene.splinecode"
-          loading="lazy"
-        ></spline-viewer>
-      </div>
       <div class="div-block-26">
         <div class="last-quote" data-reveal>
           Design doesn’t belong to those who create it. It belongs to those <br />who use it.
@@ -351,11 +344,27 @@ const companies = [
       import gsap from "gsap";
       import { ScrollTrigger } from "gsap/ScrollTrigger";
       import lottie from "lottie-web";
-      import "@splinetool/viewer";
 
       gsap.registerPlugin(ScrollTrigger);
 
       const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      // Each feature below runs independently — if one throws (e.g. a lazy
+      // asset fails, a selector comes back empty), it must not stop the rest
+      // of the page's animations from wiring up. On any failure we fall back
+      // to the always-visible CSS state (see html.gsap-failed in site.css)
+      // instead of leaving content permanently at its hidden "from" state.
+      function safeRun(label: string, fn: () => void) {
+        try {
+          fn();
+        } catch (err) {
+          console.error(`[gsap:${label}]`, err);
+          document.documentElement.classList.add("gsap-failed");
+          document.querySelectorAll<HTMLElement>(".flex-block, .flex-block-mobile").forEach((b) => {
+            gsap.set(b, { opacity: 1 });
+          });
+        }
+      }
 
       /* ---------- Typewriter (ported from live site) ---------- */
       function typewriter(el: HTMLElement | null, words: string[]) {
@@ -396,8 +405,10 @@ const companies = [
         cycle();
       }
 
-      typewriter(document.getElementById("typewriter-text"), ["Product", "Visual", "UX|UI", "Director", "Creative"]);
-      typewriter(document.getElementById("typewriter-text-2"), ["Product", "UX/UI", "Brand", "Visual", "Director"]);
+      safeRun("typewriter", () => {
+        typewriter(document.getElementById("typewriter-text"), ["Product", "Visual", "UX|UI", "Director", "Creative"]);
+        typewriter(document.getElementById("typewriter-text-2"), ["Product", "UX/UI", "Brand", "Visual", "Director"]);
+      });
 
       /* ---------- Mexico City time ---------- */
       function updateMexicoCityTime() {
@@ -410,188 +421,212 @@ const companies = [
           hour12: true,
         });
       }
-      updateMexicoCityTime();
-      setInterval(updateMexicoCityTime, 60000);
+      safeRun("mexico-time", () => {
+        updateMexicoCityTime();
+        setInterval(updateMexicoCityTime, 60000);
+      });
 
       /* ---------- Lottie sun ---------- */
-      const sunContainer = document.getElementById("sunLottie");
-      if (sunContainer) {
-        lottie.loadAnimation({
-          container: sunContainer,
-          renderer: "svg",
-          loop: true,
-          autoplay: true,
-          path: "/lottie/sun.json",
-        });
-      }
+      safeRun("lottie", () => {
+        const sunContainer = document.getElementById("sunLottie");
+        if (sunContainer) {
+          lottie.loadAnimation({
+            container: sunContainer,
+            renderer: "svg",
+            loop: true,
+            autoplay: true,
+            path: "/lottie/sun.json",
+          });
+        }
+      });
 
       /* ---------- Mobile menu ---------- */
-      const menuButton = document.getElementById("menuButton");
-      const navMenu = document.getElementById("navMenu");
-      if (menuButton && navMenu) {
-        const setOpen = (open: boolean) => {
-          navMenu.classList.toggle("open", open);
-          menuButton.classList.toggle("open", open);
-          menuButton.setAttribute("aria-expanded", String(open));
-          menuButton.setAttribute("aria-label", open ? "Close menu" : "Open menu");
-          document.documentElement.style.overflow = open ? "hidden" : "";
-          if (open && !reduceMotion) {
-            gsap.fromTo(
-              navMenu.querySelectorAll(".navbar-item"),
-              { y: 60, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }
-            );
-          }
-        };
-        menuButton.addEventListener("click", () => setOpen(!navMenu.classList.contains("open")));
-        document.addEventListener("keydown", (e) => {
-          if (e.key === "Escape" && navMenu.classList.contains("open")) {
-            setOpen(false);
-            menuButton.focus();
-          }
-        });
-        navMenu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setOpen(false)));
-      }
+      safeRun("mobile-menu", () => {
+        const menuButton = document.getElementById("menuButton");
+        const navMenu = document.getElementById("navMenu");
+        if (menuButton && navMenu) {
+          const setOpen = (open: boolean) => {
+            navMenu.classList.toggle("open", open);
+            menuButton.classList.toggle("open", open);
+            menuButton.setAttribute("aria-expanded", String(open));
+            menuButton.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+            document.documentElement.style.overflow = open ? "hidden" : "";
+            if (open && !reduceMotion) {
+              gsap.fromTo(
+                navMenu.querySelectorAll(".navbar-item"),
+                { y: 60, opacity: 0 },
+                { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }
+              );
+            }
+          };
+          menuButton.addEventListener("click", () => setOpen(!navMenu.classList.contains("open")));
+          document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape" && navMenu.classList.contains("open")) {
+              setOpen(false);
+              menuButton.focus();
+            }
+          });
+          navMenu.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setOpen(false)));
+        }
+      });
 
       /* ---------- GSAP: hero load-in ---------- */
-      const visibleHero =
-        window.getComputedStyle(document.querySelector(".section-hero")!).display === "none"
-          ? document.getElementById("heroBlockMobile")
-          : document.getElementById("heroBlock");
-      if (visibleHero) {
-        gsap.set(visibleHero, { opacity: 1 });
-        if (!reduceMotion) {
-          const lines = visibleHero.querySelectorAll("span.title, span.text-changing, .div-block-2, .div-block-44");
-          gsap.from(lines, {
-            y: 80,
-            opacity: 0,
-            duration: 1.1,
-            stagger: 0.12,
-            ease: "power3.out",
-            delay: 0.15,
-          });
-          const pic = visibleHero.querySelector(".hero-picture, .hero-picture-mobile");
-          if (pic) {
-            gsap.from(pic, { scale: 0, rotation: -12, duration: 1.2, ease: "back.out(1.6)", delay: 0.7 });
+      safeRun("hero-load-in", () => {
+        const visibleHero =
+          window.getComputedStyle(document.querySelector(".section-hero")!).display === "none"
+            ? document.getElementById("heroBlockMobile")
+            : document.getElementById("heroBlock");
+        if (visibleHero) {
+          gsap.set(visibleHero, { opacity: 1 });
+          if (!reduceMotion) {
+            const lines = visibleHero.querySelectorAll("span.title, span.text-changing, .div-block-2, .div-block-44");
+            gsap.from(lines, {
+              y: 80,
+              opacity: 0,
+              duration: 1.1,
+              stagger: 0.12,
+              ease: "power3.out",
+              delay: 0.15,
+            });
+            const pic = visibleHero.querySelector(".hero-picture, .hero-picture-mobile");
+            if (pic) {
+              gsap.from(pic, { scale: 0, rotation: -12, duration: 1.2, ease: "back.out(1.6)", delay: 0.7 });
+            }
           }
         }
-      }
-      // Fallback: make sure both hero blocks are visible even if detection failed
-      document.querySelectorAll<HTMLElement>(".flex-block, .flex-block-mobile").forEach((b) => {
-        if (Number(window.getComputedStyle(b).opacity) === 0) gsap.set(b, { opacity: 1 });
+        // Fallback: make sure both hero blocks are visible even if detection failed
+        document.querySelectorAll<HTMLElement>(".flex-block, .flex-block-mobile").forEach((b) => {
+          if (Number(window.getComputedStyle(b).opacity) === 0) gsap.set(b, { opacity: 1 });
+        });
       });
 
       /* ---------- GSAP: gradient blob drift + hero parallax ---------- */
-      const gradient = document.getElementById("heroGradient");
-      if (gradient && !reduceMotion) {
-        gsap.to(gradient, {
-          x: -60,
-          y: 50,
-          scale: 1.1,
-          duration: 7,
-          yoyo: true,
-          repeat: -1,
-          ease: "sine.inOut",
-        });
-      }
-      if (!reduceMotion) document.querySelectorAll<HTMLElement>(".section-hero, .section-hero-mobile").forEach((hero) => {
-        const block = hero.querySelector(".flex-block, .flex-block-mobile");
-        if (!block) return;
-        gsap.to(block, {
-          yPercent: -12,
-          opacity: 0.25,
-          ease: "none",
-          scrollTrigger: { trigger: hero, start: "bottom bottom", end: "bottom 20%", scrub: true },
+      safeRun("gradient-parallax", () => {
+        if (reduceMotion) return;
+        const gradient = document.getElementById("heroGradient");
+        if (gradient) {
+          gsap.to(gradient, {
+            x: -60,
+            y: 50,
+            scale: 1.1,
+            duration: 7,
+            yoyo: true,
+            repeat: -1,
+            ease: "sine.inOut",
+          });
+        }
+        document.querySelectorAll<HTMLElement>(".section-hero, .section-hero-mobile").forEach((hero) => {
+          const block = hero.querySelector(".flex-block, .flex-block-mobile");
+          if (!block) return;
+          gsap.to(block, {
+            yPercent: -12,
+            opacity: 0.25,
+            ease: "none",
+            scrollTrigger: { trigger: hero, start: "bottom bottom", end: "bottom 20%", scrub: true },
+          });
         });
       });
 
       /* ---------- GSAP: sticky quote-grid choreography ---------- */
-      const quoteSection = document.getElementById("quoteSection");
-      if (quoteSection && !reduceMotion) {
-        const tl = gsap.timeline({
-          scrollTrigger: {
-            trigger: quoteSection,
-            start: "top top",
-            end: "bottom bottom",
-            scrub: 1,
-          },
-        });
+      safeRun("quote-grid", () => {
+        if (reduceMotion) return;
+        const quoteSection = document.getElementById("quoteSection");
+        if (quoteSection) {
+          const tl = gsap.timeline({
+            scrollTrigger: {
+              trigger: quoteSection,
+              start: "top top",
+              end: "bottom bottom",
+              scrub: 1,
+            },
+          });
 
-        // Video starts as the full-screen protagonist, then settles into its grid cell
-        tl.fromTo(
-          "#videoMask",
-          { scale: 2.4, borderRadius: 0 },
-          { scale: 1, borderRadius: 8, duration: 4, ease: "power2.inOut" },
-          0
-        );
-        // Side images slide in from the edges while the video shrinks
-        tl.from('[data-qs="left"]', { xPercent: -130, rotation: -4, duration: 3, ease: "power2.out" }, 1.2);
-        tl.from('[data-qs="bottom"]', { yPercent: 140, duration: 3, ease: "power2.out" }, 1.8);
-        tl.from('[data-qs="right"]', { xPercent: 140, rotation: 4, duration: 3, ease: "power2.out" }, 2.2);
-        // The quote lands last
-        tl.from(
-          '[data-qs="quote"] > *',
-          { y: 70, opacity: 0, duration: 2.4, stagger: 0.5, ease: "power3.out" },
-          3.4
-        );
-        // Gentle parallax drift for the tail of the scroll
-        tl.to('[data-qs="left"] img, [data-qs="bottom"] img, [data-qs="right"] img', {
-          yPercent: -8,
-          duration: 3,
-          ease: "none",
-        });
-      }
+          // Video starts as the full-screen protagonist, then settles into its grid cell
+          tl.fromTo(
+            "#videoMask",
+            { scale: 2.4, borderRadius: 0 },
+            { scale: 1, borderRadius: 8, duration: 4, ease: "power2.inOut" },
+            0
+          );
+          // Side images slide in from the edges while the video shrinks
+          tl.from('[data-qs="left"]', { xPercent: -130, rotation: -4, duration: 3, ease: "power2.out" }, 1.2);
+          tl.from('[data-qs="bottom"]', { yPercent: 140, duration: 3, ease: "power2.out" }, 1.8);
+          tl.from('[data-qs="right"]', { xPercent: 140, rotation: 4, duration: 3, ease: "power2.out" }, 2.2);
+          // The quote lands last
+          tl.from(
+            '[data-qs="quote"] > *',
+            { y: 70, opacity: 0, duration: 2.4, stagger: 0.5, ease: "power3.out" },
+            3.4
+          );
+          // Gentle parallax drift for the tail of the scroll
+          tl.to('[data-qs="left"] img, [data-qs="bottom"] img, [data-qs="right"] img', {
+            yPercent: -8,
+            duration: 3,
+            ease: "none",
+          });
+        }
+      });
 
       /* ---------- GSAP: generic reveals ---------- */
-      document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
-        gsap.to(el, {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: { trigger: el, start: "top 85%", once: true },
+      safeRun("reveals", () => {
+        document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
+          gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: { trigger: el, start: "top 85%", once: true },
+          });
         });
       });
 
       /* ---------- GSAP: case-study image parallax ---------- */
-      if (!reduceMotion) document.querySelectorAll<HTMLElement>("[data-parallax]").forEach((img) => {
-        gsap.fromTo(
-          img,
-          { yPercent: -18 },
-          {
-            yPercent: 0,
-            ease: "none",
-            scrollTrigger: { trigger: img.parentElement, start: "top bottom", end: "bottom top", scrub: true },
-          }
-        );
+      safeRun("case-study-parallax", () => {
+        if (reduceMotion) return;
+        document.querySelectorAll<HTMLElement>("[data-parallax]").forEach((img) => {
+          gsap.fromTo(
+            img,
+            { yPercent: -18 },
+            {
+              yPercent: 0,
+              ease: "none",
+              scrollTrigger: { trigger: img.parentElement, start: "top bottom", end: "bottom top", scrub: true },
+            }
+          );
+        });
       });
 
       /* ---------- GSAP: horizontal text effect ---------- */
-      if (!reduceMotion) document.querySelectorAll<HTMLElement>("[data-marquee]").forEach((el) => {
-        const dir = el.dataset.marquee === "left" ? 1 : -1;
-        gsap.fromTo(
-          el,
-          { xPercent: 12 * dir },
-          {
-            xPercent: -12 * dir,
-            ease: "none",
-            scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
-          }
-        );
+      safeRun("marquee", () => {
+        if (reduceMotion) return;
+        document.querySelectorAll<HTMLElement>("[data-marquee]").forEach((el) => {
+          const dir = el.dataset.marquee === "left" ? 1 : -1;
+          gsap.fromTo(
+            el,
+            { xPercent: 12 * dir },
+            {
+              xPercent: -12 * dir,
+              ease: "none",
+              scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+            }
+          );
+        });
       });
 
       /* ---------- GSAP: company grid stagger ---------- */
-      const companyItems = document.querySelectorAll("[data-company]");
-      if (companyItems.length && !reduceMotion) {
-        gsap.from(companyItems, {
-          opacity: 0,
-          y: 30,
-          duration: 0.7,
-          stagger: { each: 0.05, from: "random" },
-          ease: "power2.out",
-          scrollTrigger: { trigger: ".div-block-21", start: "top 85%", once: true },
-        });
-      }
+      safeRun("company-grid", () => {
+        const companyItems = document.querySelectorAll("[data-company]");
+        if (companyItems.length && !reduceMotion) {
+          gsap.from(companyItems, {
+            opacity: 0,
+            y: 30,
+            duration: 0.7,
+            stagger: { each: 0.05, from: "random" },
+            ease: "power2.out",
+            scrollTrigger: { trigger: ".div-block-21", start: "top 85%", once: true },
+          });
+        }
+      });
 
     </script>
   </body>

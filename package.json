@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "3.2.1",
-    "@splinetool/viewer": "^1.12.98",
     "astro": "^4.4.0",
     "gsap": "^3.15.0",
     "lottie-web": "^5.13.0"
