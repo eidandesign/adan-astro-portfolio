@@ -360,37 +360,39 @@ img {
 }
 .menu-wrapper {
   z-index: 1002;
+  position: relative;
   display: flex;
-  flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 0.6rem;
   /* comfortable 48px touch target */
-  min-width: 48px;
-  min-height: 48px;
+  width: 48px;
+  height: 48px;
   box-sizing: border-box;
 }
-.top-menu,
-.mid-menu,
-.bot-menu {
-  background-color: var(--white);
-  width: 24px;
-  height: 2px;
-  transition: transform 0.35s ease, opacity 0.25s ease;
+/* Heroicons menu <-> x-mark: crossfade with a light counter-rotation.
+   Both icons are absolutely centred; the state transforms always carry
+   the translate(-50%,-50%) so rotation never knocks them off-centre. */
+.menu-wrapper svg {
+  width: 20px;
+  height: 20px;
+  color: var(--white);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.mid-menu {
-  margin-top: 8px;
-  margin-bottom: 8px;
-  background-color: var(--text-primary);
-}
-.menu-button.open .top-menu {
-  transform: translateY(10px) rotate(45deg);
-}
-.menu-button.open .mid-menu {
+.menu-wrapper .close-icon {
   opacity: 0;
+  transform: translate(-50%, -50%) rotate(-90deg) scale(0.5);
 }
-.menu-button.open .bot-menu {
-  transform: translateY(-10px) rotate(-45deg);
+.menu-button.open .menu-icon {
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+}
+.menu-button.open .close-icon {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(0deg) scale(1);
 }
 
 /* ============ RIGHT TOOL RAIL ============ */
@@ -1282,52 +1284,182 @@ html.gsap-failed [data-reveal] {
 
 /* ============ RESPONSIVE — MOBILE ============ */
 @media (max-width: 767px) {
+  /* Location / clock: keep it visible but compact, tucked into the
+     top-right corner (the hamburger moves to a bottom glass pill, so
+     this corner is now free). Social circles are hidden on mobile. */
   .right-tool {
+    display: flex;
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    margin: 0;
+    gap: 0;
+  }
+  .right-tool .social-links {
     display: none;
   }
-  /* Hero: honest flexbox layout instead of the old fixed-height +
-     negative-margin hacks; svh keeps it stable with the iOS URL bar. */
+  .right-panel {
+    padding: 6px 12px;
+    border-radius: 14px;
+    background: rgba(12, 16, 21, 0.5);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+  }
+  .right-panel .mexico {
+    gap: 8px;
+  }
+  .right-panel .labels.white {
+    font-size: 9px;
+    line-height: 12px;
+  }
+  .right-panel .lottie-animation {
+    width: 22px;
+  }
+  .right-panel .titles-medium {
+    font-size: 18px;
+    line-height: 20px;
+  }
+
+  /* Hero: left-aligned editorial layout with a large portrait tucked
+     into the top-right, matching the live reference. svh keeps the
+     height stable against the iOS URL bar. The reduced min-height lets
+     the next section's video peek up at the bottom of the viewport. */
   .section-hero-mobile {
     height: auto;
-    min-height: 100svh;
+    min-height: 82svh;
     margin-top: 0;
-    padding: calc(96px + env(safe-area-inset-top, 0px)) 20px 48px;
+    padding: calc(104px + env(safe-area-inset-top, 0px)) 24px 24px;
+    justify-content: flex-start;
   }
   .flex-block-mobile {
     margin-top: 0;
     width: 100%;
-  }
-  .title.xxl.mobile {
-    font-size: clamp(30px, 10.5vw, 46px);
-    line-height: 1.3;
-  }
-  .line-1 {
-    padding-right: 14vw;
+    flex: 1;
+    align-items: flex-start;
     justify-content: center;
   }
-  /* Portrait sits beside the headline instead of overlapping it off-canvas */
+  /* Keep every headline/paragraph above the gradient glow (the mobile
+     spans don't carry the .hero-line z-index the desktop lines do). */
+  .flex-block-mobile > *:not(.gradiend-background) {
+    position: relative;
+    z-index: 1;
+  }
+  .title.xxl.mobile {
+    text-align: left;
+    align-self: stretch;
+    margin: 0;
+    font-size: clamp(34px, 11.2vw, 56px);
+    line-height: 1.08;
+  }
+  .line-1 {
+    padding-right: 0;
+    align-self: stretch;
+    justify-content: flex-start;
+    position: relative;
+  }
+  /* Larger portrait overlapping the top-right of the headline */
   .hero-picture-mobile {
-    width: clamp(56px, 17vw, 76px);
+    width: clamp(120px, 40vw, 190px);
     margin-left: 0;
-    top: -34%;
+    top: calc(-28% - 64px);
+    left: auto;
+    right: -8px;
+    z-index: 2;
+  }
+  /* Blue glow anchored to the top-right corner behind the portrait */
+  .gradiend-background {
+    align-self: auto;
+    width: min(135vw, 720px);
+    height: min(78vh, 720px);
+    top: 0;
     left: auto;
     right: 0;
-  }
-  .gradiend-background {
-    align-self: center;
-    width: min(140vw, 620px);
-    height: min(80vh, 620px);
+    transform: translate(26%, -32%);
+    background: radial-gradient(
+      closest-side,
+      rgba(12, 19, 151, 0.82),
+      rgba(12, 19, 151, 0.4) 42%,
+      rgba(12, 19, 151, 0) 70%
+    );
   }
   .div-block-44 {
-    min-height: 15vw;
+    min-height: 0;
+    align-self: flex-start;
   }
   .div-block-2 {
     width: 100%;
-    max-width: 420px;
+    max-width: none;
+    margin-top: 20px;
+    align-self: stretch;
+  }
+  .flex-block-mobile .paragraph.big.centered {
+    text-align: left;
   }
   .text-changing {
-    font-size: 11vw;
-    line-height: 14vw;
+    font-size: clamp(36px, 12vw, 60px);
+    line-height: 1.08;
+    padding-bottom: 0;
+  }
+
+  /* Menu launcher: liquid-glass pill centered at the bottom of the
+     viewport (thumb-reachable), replacing the top-right hamburger. */
+  .menu-button {
+    top: auto;
+    right: auto;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .menu-wrapper {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background:
+      linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.22),
+        rgba(255, 255, 255, 0.04) 46%,
+        rgba(255, 255, 255, 0.12)
+      );
+    -webkit-backdrop-filter: blur(18px) saturate(200%) brightness(1.08);
+    backdrop-filter: blur(18px) saturate(200%) brightness(1.08);
+    border: 0.5px solid rgba(255, 255, 255, 0.35);
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.35),
+      0 1px 3px rgba(0, 0, 0, 0.2),
+      inset 0 1px 1px rgba(255, 255, 255, 0.65),
+      inset 0 -6px 10px rgba(255, 255, 255, 0.06),
+      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Specular top highlight — the glossy "liquid glass" sheen */
+  .menu-wrapper::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+      120% 80% at 50% -10%,
+      rgba(255, 255, 255, 0.55),
+      rgba(255, 255, 255, 0) 55%
+    );
+    pointer-events: none;
+  }
+  /* Keep the icon bars crisp above the glass layers */
+  /* Icons stay above the glass sheen (::before) */
+  .menu-wrapper svg {
+    z-index: 1;
+  }
+  /* Press feedback — the pill compresses slightly under the thumb */
+  .menu-button:active .menu-wrapper {
+    transform: scale(0.9);
   }
   .titles.medium {
     font-size: 32px;
