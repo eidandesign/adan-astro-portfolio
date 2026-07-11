@@ -30,6 +30,7 @@ import "../../styles/cotizador.css";
           class="cz-input"
           id="gateInput"
           placeholder="Clave"
+          aria-label="Clave de acceso"
           autocomplete="current-password"
           autofocus
         />
@@ -143,9 +144,11 @@ import "../../styles/cotizador.css";
       const CTX_KEY = "cz-ctx-v1";
       const OPENAI_KEY = "cz-openai-key";
 
-      const $ = (id) => document.getElementById(id);
+      // Vanilla-DOM tool page: the cast to `any` keeps strict TS (astro
+      // check) out of the way of plain JS element access.
+      const $ = (id: string) => document.getElementById(id) as any;
 
-      async function sha256hex(text) {
+      async function sha256hex(text: string) {
         const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
         return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
       }
@@ -154,15 +157,15 @@ import "../../styles/cotizador.css";
       // All quotes live in one localStorage collection; `data` is the one
       // currently open in the editor and autosaves into the collection on
       // every change.
-      let quotes = [];
+      let quotes: any[] = [];
       try {
-        const saved = JSON.parse(localStorage.getItem(QUOTES_KEY));
+        const saved = JSON.parse(localStorage.getItem(QUOTES_KEY) || "null");
         if (Array.isArray(saved)) quotes = saved.filter((q) => q && q.q && q.meta);
       } catch (e) {}
 
       // Migrate the single-draft storage from the first version of the tool.
       try {
-        const legacy = JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY));
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY) || "null");
         if (legacy && legacy.q && legacy.meta && !quotes.length) {
           legacy.id = legacy.id || genId();
           legacy.updatedAt = Date.now();
@@ -206,7 +209,7 @@ import "../../styles/cotizador.css";
         renderCover(cover, data);
         renderDoc(paper, data, {
           editable: true,
-          onChange: (_d, rerender) => {
+          onChange: (_d: any, rerender: any) => {
             save();
             if (rerender) renderPaper();
           },
@@ -231,6 +234,16 @@ import "../../styles/cotizador.css";
         $("inContacto").placeholder = t.phContacto;
         $("inFecha").placeholder = t.fecha;
         $("inCtx").placeholder = t.phContexto;
+        // Placeholders aren't accessible names — mirror them as labels.
+        $("inNombre").setAttribute("aria-label", t.phNombre);
+        $("inEmpresa").setAttribute("aria-label", t.phEmpresa);
+        $("inContacto").setAttribute("aria-label", t.phContacto);
+        $("inNumero").setAttribute("aria-label", "Nº");
+        $("inFecha").setAttribute("aria-label", t.fecha);
+        $("inCtx").setAttribute("aria-label", t.contexto);
+        $("inRate").setAttribute("aria-label", t.tarifa);
+        $("inApiKey").setAttribute("aria-label", "OpenAI API key");
+        $("btnDrawerClose").setAttribute("aria-label", t.cerrar);
         $("hintApi").textContent = t.apiHint;
         $("hintGen").textContent = t.hint;
         $("btnGenerate").textContent = busy ? t.generando : t.generar;
@@ -339,7 +352,7 @@ import "../../styles/cotizador.css";
         }
       }
 
-      function newQuote(lang) {
+      function newQuote(lang: string) {
         const fresh = defaultQuote(lang);
         fresh.meta.numero = nextNumero(quotes);
         return fresh;
@@ -372,27 +385,27 @@ import "../../styles/cotizador.css";
 
       /* ---------- Sidebar bindings ---------- */
       for (const id of ["inNombre", "inEmpresa", "inContacto", "inNumero", "inFecha"]) {
-        $(id).addEventListener("input", (e) => {
+        $(id).addEventListener("input", (e: any) => {
           data.meta[e.currentTarget.dataset.key] = e.currentTarget.value;
           save();
           renderPaper();
         });
       }
-      $("inCtx").addEventListener("input", (e) => {
+      $("inCtx").addEventListener("input", (e: any) => {
         ctx = e.currentTarget.value;
         save();
       });
-      $("inRate").addEventListener("change", (e) => {
+      $("inRate").addEventListener("change", (e: any) => {
         data.rate = Number(e.currentTarget.value.replace(/[^0-9.]/g, "")) || 0;
         save();
         renderPaper();
       });
-      $("inMoneda").addEventListener("change", (e) => {
+      $("inMoneda").addEventListener("change", (e: any) => {
         data.moneda = e.currentTarget.value;
         save();
         renderPaper();
       });
-      $("inApiKey").addEventListener("input", (e) => {
+      $("inApiKey").addEventListener("input", (e: any) => {
         apiKey = e.currentTarget.value;
         try {
           localStorage.setItem(OPENAI_KEY, apiKey);
@@ -400,7 +413,7 @@ import "../../styles/cotizador.css";
       });
 
       for (const id of ["langEs", "langEn"]) {
-        $(id).addEventListener("click", (e) => {
+        $(id).addEventListener("click", (e: any) => {
           data.lang = e.currentTarget.dataset.lang;
           save();
           refresh();
@@ -408,12 +421,13 @@ import "../../styles/cotizador.css";
       }
 
       /* ---------- Actions ---------- */
-      function toast(msg) {
+      let toastTimer: ReturnType<typeof setTimeout>;
+      function toast(msg: string) {
         const node = $("czToast");
         node.textContent = msg;
         node.classList.add("is-visible");
-        clearTimeout(toast._t);
-        toast._t = setTimeout(() => node.classList.remove("is-visible"), 2200);
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => node.classList.remove("is-visible"), 2200);
       }
 
       $("btnCopy").addEventListener("click", async () => {
@@ -461,7 +475,7 @@ import "../../styles/cotizador.css";
           data.q = await generateProposal({ ctx, data, apiKey, clave });
           save();
           renderPaper();
-        } catch (err) {
+        } catch (err: any) {
           errBox.textContent = err && err.message && /key/i.test(err.message) ? err.message : t.errGen;
           errBox.hidden = false;
         } finally {
@@ -484,7 +498,7 @@ import "../../styles/cotizador.css";
         refresh();
       }
 
-      $("czGateForm").addEventListener("submit", async (e) => {
+      $("czGateForm").addEventListener("submit", async (e: any) => {
         e.preventDefault();
         const t = labelsFor(data.lang);
         const value = $("gateInput").value;

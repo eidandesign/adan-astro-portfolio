@@ -157,11 +157,6 @@
   color: var(--primary);
 }
 
-.cz-btn-small {
-  padding: 8px 14px;
-  font-size: 13px;
-}
-
 /* ===== Saved quotes drawer ===== */
 .cz-drawer-backdrop {
   position: fixed;

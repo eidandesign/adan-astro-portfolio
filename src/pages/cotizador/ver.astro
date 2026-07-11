@@ -38,10 +38,12 @@ import "../../styles/cotizador.css";
     <script>
       import { labelsFor, decodeQuote, renderDoc, renderCover } from "../../lib/cotizador.js";
 
-      const paper = document.getElementById("czPaper");
-      const cover = document.getElementById("czCover");
-      const errorBox = document.getElementById("czError");
-      const btnPrint = document.getElementById("btnPrint");
+      // Vanilla-DOM page: `any` casts keep strict TS out of plain JS access.
+      const paper = document.getElementById("czPaper") as any;
+      const cover = document.getElementById("czCover") as any;
+      const errorBox = document.getElementById("czError") as any;
+      const btnPrint = document.getElementById("btnPrint") as any;
+      const hdrTag = document.getElementById("hdrTag") as any;
 
       function fail() {
         errorBox.textContent = labelsFor(document.documentElement.lang).linkInvalido;
@@ -64,8 +66,7 @@ import "../../styles/cotizador.css";
         const t = labelsFor(data.lang);
         document.documentElement.lang = data.lang === "en" ? "en" : "es";
         document.title = `${t.cotizacion} ${data.meta.numero || ""} — No Flag Brand`.trim();
-        document.getElementById("hdrTag").textContent =
-          `${t.cotizacion} ${data.meta.numero || ""}`.trim();
+        hdrTag.textContent = `${t.cotizacion} ${data.meta.numero || ""}`.trim();
 
         renderCover(cover, data);
         renderDoc(paper, data, { editable: false });

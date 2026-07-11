@@ -11,7 +11,6 @@ export const LABELS = {
     copiarLink: "Copiar link para cliente",
     linkCopiado: "Link copiado",
     nueva: "Nueva cotización",
-    confirmNueva: "¿Empezar una cotización nueva? Se borrará la actual.",
     datosCliente: "Datos del cliente",
     contexto: "Contexto del proyecto",
     phNombre: "Nombre del cliente",
@@ -58,7 +57,6 @@ export const LABELS = {
     duplicar: "Duplicar",
     eliminar: "Eliminar",
     confirmEliminar: "¿Seguro? Sí, eliminar",
-    guardado: "Guardado",
     cerrar: "Cerrar",
     sinTitulo: "Sin título",
     // Cover
@@ -70,7 +68,6 @@ export const LABELS = {
     copiarLink: "Copy client link",
     linkCopiado: "Link copied",
     nueva: "New quote",
-    confirmNueva: "Start a new quote? The current one will be cleared.",
     datosCliente: "Client details",
     contexto: "Project context",
     phNombre: "Client name",
@@ -112,7 +109,6 @@ export const LABELS = {
     duplicar: "Duplicate",
     eliminar: "Delete",
     confirmEliminar: "Sure? Yes, delete",
-    guardado: "Saved",
     cerrar: "Close",
     sinTitulo: "Untitled",
     clienteLabel: "Client",
@@ -545,6 +541,7 @@ export async function generateProposal({ ctx, data, apiKey, clave }) {
   };
 
   let text = null;
+  let serverConfigured = false;
   try {
     const res = await fetch("/api/cotizar", {
       method: "POST",
@@ -552,14 +549,20 @@ export async function generateProposal({ ctx, data, apiKey, clave }) {
       body: JSON.stringify({ ...payload, clave }),
     });
     if (res.ok) {
-      text = (await res.json()).text;
+      text = (await res.json()).text || null;
+    } else if (![404, 405, 501].includes(res.status)) {
+      // The endpoint exists and is configured but the call failed (bad
+      // clave, OpenAI down). "Paste a key" would be misleading advice here.
+      serverConfigured = true;
     }
   } catch (e) {
     // Network failure — fall through to the browser-side key.
   }
 
   if (text === null) {
-    if (!apiKey || !apiKey.trim()) throw new Error(t.errKey);
+    if (!apiKey || !apiKey.trim()) {
+      throw new Error(serverConfigured ? t.errGen : t.errKey);
+    }
     const { system, user } = buildPrompts(payload);
     try {
       text = await callOpenAI({ apiKey, system, user });

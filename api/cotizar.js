@@ -7,7 +7,7 @@
 // Setup (Vercel dashboard → Project → Settings → Environment Variables):
 //   OPENAI_API_KEY      = sk-…
 //   COTIZADOR_KEY_HASH  = sha256 hex of the access key
-import { createHash } from "node:crypto";
+import { createHash, timingSafeEqual } from "node:crypto";
 import { buildPrompts, callOpenAI } from "../src/lib/cotizador-prompt.js";
 
 export default async function handler(req, res) {
@@ -25,8 +25,14 @@ export default async function handler(req, res) {
   }
 
   const body = req.body || {};
-  const claveHash = createHash("sha256").update(String(body.clave || "")).digest("hex");
-  if (claveHash !== expectedHash) {
+  const claveHash = createHash("sha256").update(String(body.clave || "")).digest();
+  let expected;
+  try {
+    expected = Buffer.from(expectedHash, "hex");
+  } catch (e) {
+    expected = Buffer.alloc(0);
+  }
+  if (expected.length !== claveHash.length || !timingSafeEqual(claveHash, expected)) {
     res.status(401).json({ error: "unauthorized" });
     return;
   }
