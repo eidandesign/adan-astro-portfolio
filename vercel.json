@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/cotizar.js": {
+      "maxDuration": 60
+    }
+  }
+}

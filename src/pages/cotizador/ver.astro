@@ -1,0 +1,85 @@
+---
+// Client-facing quote viewer. The full quote travels encoded in the URL hash
+// (#q=…), so no backend or database is needed: the builder generates the link
+// and anyone who receives it can read and download the quote as PDF.
+// Read-only, not indexed, excluded from the sitemap.
+import "../../styles/site.css";
+import "../../styles/cotizador.css";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cotización — No Flag Brand</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0c1015" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+  </head>
+  <body class="cz-body">
+    <header class="cz-header" data-noprint="1">
+      <span class="cz-header-brand">
+        <img src="/images/noflagbrand-logo.svg" alt="No Flag Brand" class="cz-header-logo" />
+        <span class="cz-header-tag" id="hdrTag">Cotización</span>
+      </span>
+      <div class="cz-header-actions">
+        <button type="button" class="cz-btn" id="btnPrint" hidden>Descargar PDF</button>
+      </div>
+    </header>
+
+    <div class="cz-main">
+      <main class="cz-doc-scroll" id="docScroll">
+        <div class="cz-cover" id="czCover" hidden></div>
+        <div class="cz-paper" id="czPaper" hidden></div>
+        <p class="cz-viewer-error" id="czError" hidden></p>
+      </main>
+    </div>
+
+    <script>
+      import { labelsFor, decodeQuote, renderDoc, renderCover } from "../../lib/cotizador.js";
+
+      const paper = document.getElementById("czPaper");
+      const cover = document.getElementById("czCover");
+      const errorBox = document.getElementById("czError");
+      const btnPrint = document.getElementById("btnPrint");
+
+      function fail() {
+        errorBox.textContent = labelsFor(document.documentElement.lang).linkInvalido;
+        errorBox.hidden = false;
+        paper.hidden = true;
+        cover.hidden = true;
+        btnPrint.hidden = true;
+      }
+
+      async function load() {
+        const match = location.hash.match(/^#q=(.+)$/);
+        if (!match) return fail();
+        let data;
+        try {
+          data = await decodeQuote(match[1]);
+        } catch (e) {
+          return fail();
+        }
+
+        const t = labelsFor(data.lang);
+        document.documentElement.lang = data.lang === "en" ? "en" : "es";
+        document.title = `${t.cotizacion} ${data.meta.numero || ""} — No Flag Brand`.trim();
+        document.getElementById("hdrTag").textContent =
+          `${t.cotizacion} ${data.meta.numero || ""}`.trim();
+
+        renderCover(cover, data);
+        renderDoc(paper, data, { editable: false });
+        cover.hidden = false;
+        paper.hidden = false;
+        errorBox.hidden = true;
+
+        btnPrint.textContent = t.descargar;
+        btnPrint.hidden = false;
+      }
+
+      btnPrint.addEventListener("click", () => window.print());
+      window.addEventListener("hashchange", load);
+      load();
+    </script>
+  </body>
+</html>

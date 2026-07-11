@@ -1,0 +1,517 @@
+---
+// Private quote builder (No Flag Brand). Access is gated by a key checked
+// client-side (SHA-256); quotes are built here and shared with clients as a
+// self-contained link to /cotizador/ver. Not indexed and excluded from the
+// sitemap — this page is a tool, not site content.
+import "../../styles/site.css";
+import "../../styles/cotizador.css";
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cotizador — No Flag Brand</title>
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0c1015" />
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+  </head>
+  <body class="cz-body">
+    <!-- Access gate -->
+    <div class="cz-gate" id="czGate">
+      <form class="cz-gate-card" id="czGateForm">
+        <img src="/images/noflagbrand-logo.svg" alt="No Flag Brand" class="cz-gate-logo" />
+        <div>
+          <h1 class="cz-gate-title" id="gateTitle">Acceso privado</h1>
+          <p class="cz-gate-text" id="gateText">Escribe la clave para entrar al cotizador.</p>
+        </div>
+        <input
+          type="password"
+          class="cz-input"
+          id="gateInput"
+          placeholder="Clave"
+          autocomplete="current-password"
+          autofocus
+        />
+        <div class="cz-gate-error" id="gateError"></div>
+        <button type="submit" class="cz-btn" id="gateSubmit">Entrar</button>
+      </form>
+    </div>
+
+    <!-- Builder -->
+    <div id="czApp" hidden>
+      <header class="cz-header" data-noprint="1">
+        <a class="cz-header-brand" href="/">
+          <img src="/images/noflagbrand-logo.svg" alt="No Flag Brand" class="cz-header-logo" />
+          <span class="cz-header-tag" id="hdrTag">Cotizador</span>
+        </a>
+        <div class="cz-header-actions">
+          <div class="cz-lang" role="group" aria-label="Idioma">
+            <button type="button" data-lang="es" id="langEs">ES</button>
+            <button type="button" data-lang="en" id="langEn">EN</button>
+          </div>
+          <button type="button" class="cz-btn ghost" id="btnList">Cotizaciones</button>
+          <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
+          <button type="button" class="cz-btn" id="btnPrint">Descargar PDF</button>
+        </div>
+      </header>
+
+      <!-- Saved quotes drawer -->
+      <div class="cz-drawer-backdrop" id="drawerBackdrop" hidden></div>
+      <aside class="cz-drawer" id="czDrawer" hidden aria-label="Cotizaciones guardadas">
+        <div class="cz-drawer-head">
+          <span class="cz-label" id="drawerTitle">Cotizaciones</span>
+          <button type="button" class="cz-drawer-close" id="btnDrawerClose" aria-label="Cerrar">×</button>
+        </div>
+        <div class="cz-drawer-list" id="drawerList"></div>
+        <button type="button" class="cz-btn" id="btnDrawerNew">Nueva cotización</button>
+      </aside>
+
+      <div class="cz-main">
+        <aside class="cz-sidebar" data-noprint="1">
+          <div class="cz-group">
+            <div class="cz-label" id="lblCliente">Datos del cliente</div>
+            <input class="cz-input" id="inNombre" data-key="nombre" placeholder="Nombre del cliente" />
+            <input class="cz-input" id="inEmpresa" data-key="empresa" placeholder="Empresa" />
+            <input class="cz-input" id="inContacto" data-key="contacto" placeholder="Correo o teléfono" />
+            <div class="cz-row-2">
+              <input class="cz-input" id="inNumero" data-key="numero" placeholder="Nº" />
+              <input class="cz-input" id="inFecha" data-key="fecha" placeholder="Fecha" />
+            </div>
+          </div>
+
+          <div class="cz-group">
+            <div class="cz-label" id="lblContexto">Contexto del proyecto</div>
+            <textarea class="cz-textarea" id="inCtx"></textarea>
+            <div class="cz-rate-row">
+              <span id="lblTarifa">Tarifa base</span>
+              <input class="cz-input" id="inRate" inputmode="decimal" />
+              <span>/h</span>
+              <select class="cz-select" id="inMoneda" aria-label="Moneda">
+                <option value="USD">USD</option>
+                <option value="MXN">MXN</option>
+                <option value="EUR">EUR</option>
+              </select>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <input type="password" class="cz-input" id="inApiKey" placeholder="OpenAI API key (sk-…)" autocomplete="off" />
+              <div class="cz-hint" id="hintApi">Se guarda solo en este navegador. Créala en platform.openai.com/api-keys</div>
+            </div>
+            <button type="button" class="cz-btn" id="btnGenerate">Generar propuesta con IA</button>
+            <div class="cz-error" id="genError" hidden></div>
+            <div class="cz-hint" id="hintGen"></div>
+          </div>
+
+          <div class="cz-group">
+            <button type="button" class="cz-btn ghost" id="btnNew">Nueva cotización</button>
+          </div>
+        </aside>
+
+        <main class="cz-doc-scroll">
+          <div class="cz-cover" id="czCover"></div>
+          <div class="cz-paper" id="czPaper"></div>
+        </main>
+      </div>
+    </div>
+
+    <div class="cz-toast" id="czToast" role="status"></div>
+
+    <script>
+      import {
+        labelsFor,
+        defaultQuote,
+        renderDoc,
+        renderCover,
+        encodeQuote,
+        generateProposal,
+        genId,
+        nextNumero,
+        todayStr,
+        fmtMoney,
+        totalOf,
+      } from "../../lib/cotizador.js";
+
+      // To change the access key: run in any browser console —
+      //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('nueva-clave'))
+      //     .then(b => console.log([...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('')))
+      // and paste the result here.
+      const PASS_HASH = "f79decdec52ec63f49c7d217d4cc846ecb447c962368c068956dcbf038b03dad";
+      const AUTH_KEY = "cz-auth-v1";
+      const LEGACY_DRAFT_KEY = "cz-quote-v1";
+      const QUOTES_KEY = "cz-quotes-v1";
+      const CURRENT_KEY = "cz-current-id";
+      const CTX_KEY = "cz-ctx-v1";
+      const OPENAI_KEY = "cz-openai-key";
+
+      const $ = (id) => document.getElementById(id);
+
+      async function sha256hex(text) {
+        const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+        return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      /* ---------- State ---------- */
+      // All quotes live in one localStorage collection; `data` is the one
+      // currently open in the editor and autosaves into the collection on
+      // every change.
+      let quotes = [];
+      try {
+        const saved = JSON.parse(localStorage.getItem(QUOTES_KEY));
+        if (Array.isArray(saved)) quotes = saved.filter((q) => q && q.q && q.meta);
+      } catch (e) {}
+
+      // Migrate the single-draft storage from the first version of the tool.
+      try {
+        const legacy = JSON.parse(localStorage.getItem(LEGACY_DRAFT_KEY));
+        if (legacy && legacy.q && legacy.meta && !quotes.length) {
+          legacy.id = legacy.id || genId();
+          legacy.updatedAt = Date.now();
+          quotes.push(legacy);
+          localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+          localStorage.setItem(CURRENT_KEY, legacy.id);
+        }
+        localStorage.removeItem(LEGACY_DRAFT_KEY);
+      } catch (e) {}
+
+      let data =
+        quotes.find((q) => q.id === localStorage.getItem(CURRENT_KEY)) ||
+        quotes[quotes.length - 1] ||
+        defaultQuote("es");
+      if (!data.id) data.id = genId();
+
+      let ctx = localStorage.getItem(CTX_KEY) || "";
+      let apiKey = localStorage.getItem(OPENAI_KEY) || "";
+      // The access key in plain text — sent to /api/cotizar, which verifies
+      // its SHA-256 against the COTIZADOR_KEY_HASH env var.
+      let clave = "";
+      let busy = false;
+
+      function save() {
+        data.updatedAt = Date.now();
+        const idx = quotes.findIndex((q) => q.id === data.id);
+        if (idx === -1) quotes.push(data);
+        else quotes[idx] = data;
+        try {
+          localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+          localStorage.setItem(CURRENT_KEY, data.id);
+          localStorage.setItem(CTX_KEY, ctx);
+        } catch (e) {}
+      }
+
+      /* ---------- Rendering ---------- */
+      const paper = $("czPaper");
+      const cover = $("czCover");
+
+      function renderPaper() {
+        renderCover(cover, data);
+        renderDoc(paper, data, {
+          editable: true,
+          onChange: (_d, rerender) => {
+            save();
+            if (rerender) renderPaper();
+          },
+        });
+      }
+
+      function refresh() {
+        const t = labelsFor(data.lang);
+        document.documentElement.lang = data.lang;
+        $("hdrTag").textContent = t.cotizador;
+        $("btnList").textContent = `${t.guardadas} (${quotes.length})`;
+        $("btnCopy").textContent = t.copiarLink;
+        $("btnPrint").textContent = t.descargar;
+        $("btnNew").textContent = t.nueva;
+        $("drawerTitle").textContent = t.guardadas;
+        $("btnDrawerNew").textContent = t.nueva;
+        $("lblCliente").textContent = t.datosCliente;
+        $("lblContexto").textContent = t.contexto;
+        $("lblTarifa").textContent = t.tarifa;
+        $("inNombre").placeholder = t.phNombre;
+        $("inEmpresa").placeholder = t.phEmpresa;
+        $("inContacto").placeholder = t.phContacto;
+        $("inFecha").placeholder = t.fecha;
+        $("inCtx").placeholder = t.phContexto;
+        $("hintApi").textContent = t.apiHint;
+        $("hintGen").textContent = t.hint;
+        $("btnGenerate").textContent = busy ? t.generando : t.generar;
+        $("langEs").classList.toggle("is-active", data.lang === "es");
+        $("langEn").classList.toggle("is-active", data.lang === "en");
+
+        $("inNombre").value = data.meta.nombre;
+        $("inEmpresa").value = data.meta.empresa;
+        $("inContacto").value = data.meta.contacto;
+        $("inNumero").value = data.meta.numero;
+        $("inFecha").value = data.meta.fecha;
+        $("inCtx").value = ctx;
+        $("inRate").value = data.rate;
+        $("inMoneda").value = data.moneda;
+        $("inApiKey").value = apiKey;
+
+        renderList();
+        renderPaper();
+      }
+
+      /* ---------- Saved quotes drawer ---------- */
+      function renderList() {
+        const t = labelsFor(data.lang);
+        const list = $("drawerList");
+        list.textContent = "";
+        if (!quotes.length) {
+          const empty = document.createElement("p");
+          empty.className = "cz-hint";
+          empty.textContent = t.vacio;
+          list.appendChild(empty);
+          return;
+        }
+        const sorted = [...quotes].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+        for (const q of sorted) {
+          const item = document.createElement("div");
+          item.className = "cz-quote-item" + (q.id === data.id ? " is-active" : "");
+
+          const open = document.createElement("button");
+          open.type = "button";
+          open.className = "cz-quote-open";
+          const line1 = document.createElement("div");
+          line1.className = "cz-quote-line1";
+          const num = document.createElement("span");
+          num.textContent = q.meta.numero || "—";
+          const total = document.createElement("span");
+          total.textContent = fmtMoney(totalOf(q), q.moneda, q.lang);
+          line1.append(num, total);
+          const line2 = document.createElement("div");
+          line2.className = "cz-quote-line2";
+          line2.textContent = q.q.proyecto || t.sinTitulo;
+          const line3 = document.createElement("div");
+          line3.className = "cz-quote-line3";
+          line3.textContent =
+            [q.meta.nombre, q.meta.empresa].filter(Boolean).join(" · ") || "—";
+          open.append(line1, line2, line3);
+          open.addEventListener("click", () => {
+            data = q;
+            try {
+              localStorage.setItem(CURRENT_KEY, data.id);
+            } catch (e) {}
+            closeDrawer();
+            refresh();
+          });
+
+          const actions = document.createElement("div");
+          actions.className = "cz-quote-actions";
+          const dup = document.createElement("button");
+          dup.type = "button";
+          dup.textContent = t.duplicar;
+          dup.addEventListener("click", () => {
+            const copy = JSON.parse(JSON.stringify(q));
+            copy.id = genId();
+            copy.meta.numero = nextNumero(quotes);
+            copy.meta.fecha = todayStr(copy.lang);
+            data = copy;
+            save();
+            closeDrawer();
+            refresh();
+          });
+          const del = document.createElement("button");
+          del.type = "button";
+          del.textContent = t.eliminar;
+          del.className = "cz-quote-del";
+          // Two-step delete instead of a native confirm(): first click arms
+          // the button, second click deletes. Clicking elsewhere re-renders
+          // the list, which disarms it.
+          del.addEventListener("click", () => {
+            if (!del.classList.contains("is-armed")) {
+              del.classList.add("is-armed");
+              del.textContent = t.confirmEliminar;
+              return;
+            }
+            quotes = quotes.filter((x) => x.id !== q.id);
+            try {
+              localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+            } catch (e) {}
+            if (q.id === data.id) {
+              data = quotes[quotes.length - 1] || newQuote(data.lang);
+            }
+            refresh();
+          });
+          actions.append(dup, del);
+
+          item.append(open, actions);
+          list.appendChild(item);
+        }
+      }
+
+      function newQuote(lang) {
+        const fresh = defaultQuote(lang);
+        fresh.meta.numero = nextNumero(quotes);
+        return fresh;
+      }
+
+      const drawer = $("czDrawer");
+      const backdrop = $("drawerBackdrop");
+      function openDrawer() {
+        renderList();
+        drawer.hidden = false;
+        backdrop.hidden = false;
+      }
+      function closeDrawer() {
+        drawer.hidden = true;
+        backdrop.hidden = true;
+      }
+      $("btnList").addEventListener("click", () => (drawer.hidden ? openDrawer() : closeDrawer()));
+      $("btnDrawerClose").addEventListener("click", closeDrawer);
+      backdrop.addEventListener("click", closeDrawer);
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !drawer.hidden) closeDrawer();
+      });
+      $("btnDrawerNew").addEventListener("click", () => {
+        data = newQuote(data.lang);
+        ctx = "";
+        save();
+        closeDrawer();
+        refresh();
+      });
+
+      /* ---------- Sidebar bindings ---------- */
+      for (const id of ["inNombre", "inEmpresa", "inContacto", "inNumero", "inFecha"]) {
+        $(id).addEventListener("input", (e) => {
+          data.meta[e.currentTarget.dataset.key] = e.currentTarget.value;
+          save();
+          renderPaper();
+        });
+      }
+      $("inCtx").addEventListener("input", (e) => {
+        ctx = e.currentTarget.value;
+        save();
+      });
+      $("inRate").addEventListener("change", (e) => {
+        data.rate = Number(e.currentTarget.value.replace(/[^0-9.]/g, "")) || 0;
+        save();
+        renderPaper();
+      });
+      $("inMoneda").addEventListener("change", (e) => {
+        data.moneda = e.currentTarget.value;
+        save();
+        renderPaper();
+      });
+      $("inApiKey").addEventListener("input", (e) => {
+        apiKey = e.currentTarget.value;
+        try {
+          localStorage.setItem(OPENAI_KEY, apiKey);
+        } catch (err) {}
+      });
+
+      for (const id of ["langEs", "langEn"]) {
+        $(id).addEventListener("click", (e) => {
+          data.lang = e.currentTarget.dataset.lang;
+          save();
+          refresh();
+        });
+      }
+
+      /* ---------- Actions ---------- */
+      function toast(msg) {
+        const node = $("czToast");
+        node.textContent = msg;
+        node.classList.add("is-visible");
+        clearTimeout(toast._t);
+        toast._t = setTimeout(() => node.classList.remove("is-visible"), 2200);
+      }
+
+      $("btnCopy").addEventListener("click", async () => {
+        const t = labelsFor(data.lang);
+        const token = await encodeQuote(data);
+        const url = `${location.origin}/cotizador/ver#q=${token}`;
+        try {
+          await navigator.clipboard.writeText(url);
+          toast(t.linkCopiado + " ✓");
+        } catch (e) {
+          window.prompt("Copia el link:", url);
+        }
+      });
+
+      $("btnPrint").addEventListener("click", () => {
+        const prev = document.title;
+        document.title = `Cotización ${data.meta.numero || ""} — No Flag Brand`.trim();
+        window.print();
+        document.title = prev;
+      });
+
+      // The current quote autosaves into the collection, so starting a new
+      // one loses nothing — no confirmation needed.
+      $("btnNew").addEventListener("click", () => {
+        data = newQuote(data.lang);
+        ctx = "";
+        save();
+        refresh();
+      });
+
+      $("btnGenerate").addEventListener("click", async () => {
+        if (busy) return;
+        const t = labelsFor(data.lang);
+        const errBox = $("genError");
+        errBox.hidden = true;
+        if (!ctx.trim()) {
+          errBox.textContent = t.errCtx;
+          errBox.hidden = false;
+          return;
+        }
+        busy = true;
+        $("btnGenerate").disabled = true;
+        $("btnGenerate").textContent = t.generando;
+        try {
+          data.q = await generateProposal({ ctx, data, apiKey, clave });
+          save();
+          renderPaper();
+        } catch (err) {
+          errBox.textContent = err && err.message && /key/i.test(err.message) ? err.message : t.errGen;
+          errBox.hidden = false;
+        } finally {
+          busy = false;
+          $("btnGenerate").disabled = false;
+          $("btnGenerate").textContent = t.generar;
+        }
+      });
+
+      /* ---------- Access gate ---------- */
+      const gate = $("czGate");
+      const app = $("czApp");
+
+      function unlock() {
+        gate.hidden = true;
+        app.hidden = false;
+        // `hidden` needs display:none to win while locked, so the layout
+        // display is applied here instead of inline in the markup.
+        app.style.display = "contents";
+        refresh();
+      }
+
+      $("czGateForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const t = labelsFor(data.lang);
+        const value = $("gateInput").value;
+        if ((await sha256hex(value)) === PASS_HASH) {
+          clave = value;
+          // Stored in plain text (only in this browser): the gate validates
+          // it by hash, and /api/cotizar needs the original value.
+          try {
+            localStorage.setItem(AUTH_KEY, value);
+          } catch (err) {}
+          unlock();
+        } else {
+          $("gateError").textContent = t.claveIncorrecta;
+          $("gateInput").value = "";
+          $("gateInput").focus();
+        }
+      });
+
+      (async () => {
+        const stored = localStorage.getItem(AUTH_KEY) || "";
+        if (stored && (await sha256hex(stored)) === PASS_HASH) {
+          clave = stored;
+          unlock();
+        } else {
+          $("gateInput").focus();
+        }
+      })();
+    </script>
+  </body>
+</html>

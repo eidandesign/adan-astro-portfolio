@@ -5,8 +5,12 @@ export default defineConfig({
   site: 'https://www.adancareta.com',
   integrations: [
     sitemap({
-      // /contact and /portfolio are redirect stubs — keep them out of the sitemap
-      filter: (page) => !page.endsWith('/contact/') && !page.endsWith('/portfolio/'),
+      // /contact and /portfolio are redirect stubs; /cotizador is a private
+      // tool (noindex) — keep them out of the sitemap
+      filter: (page) =>
+        !page.endsWith('/contact/') &&
+        !page.endsWith('/portfolio/') &&
+        !page.includes('/cotizador/'),
     }),
   ],
   output: 'static',
