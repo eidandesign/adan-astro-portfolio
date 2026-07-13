@@ -1,7 +1,7 @@
 // Shared logic for the private quote builder (/cotizador) and the client
 // view page (/cotizador/ver). The quote travels between them encoded in the
 // URL hash, so the viewer works without any backend or database.
-import { buildPrompts, callOpenAI } from "./cotizador-prompt.js";
+import { buildPrompts, callGroq } from "./cotizador-prompt.js";
 
 export const LABELS = {
   es: {
@@ -28,7 +28,7 @@ export const LABELS = {
       "Opcional: solo si la IA del sitio no está configurada. Se guarda solo en este navegador.",
     errCtx: "Escribe primero el contexto del proyecto.",
     errKey:
-      "La IA del sitio no está disponible. Configura OPENAI_API_KEY en Vercel o pega tu API key de OpenAI abajo en el panel.",
+      "La IA del sitio no está disponible. Configura GROQ_API_KEY en Vercel o pega tu API key de Groq abajo en el panel.",
     errKeyInvalid: "API key inválida. Revísala e intenta de nuevo.",
     errGen: "No se pudo generar la propuesta. Intenta de nuevo.",
     // Document
@@ -84,7 +84,7 @@ export const LABELS = {
     apiHint: "Optional: only if the site's AI isn't configured. Stored only in this browser.",
     errCtx: "Write the project context first.",
     errKey:
-      "The site's AI isn't available. Set OPENAI_API_KEY on Vercel or paste your OpenAI API key below.",
+      "The site's AI isn't available. Set GROQ_API_KEY on Vercel or paste your Groq API key below.",
     errKeyInvalid: "Invalid API key. Check it and try again.",
     errGen: "Could not generate the proposal. Try again.",
     cotizacion: "Quote",
@@ -526,7 +526,7 @@ export function renderDoc(root, data, opts = {}) {
 /* ---------- AI generation ---------- */
 
 // Prefers the site's own serverless endpoint (/api/cotizar, key in a Vercel
-// env var). Falls back to calling OpenAI directly with a key pasted in the
+// env var). Falls back to calling Groq directly with a key pasted in the
 // browser when the endpoint isn't deployed or configured (e.g. `astro dev`).
 export async function generateProposal({ ctx, data, apiKey, clave }) {
   const t = labelsFor(data.lang);
@@ -565,7 +565,7 @@ export async function generateProposal({ ctx, data, apiKey, clave }) {
     }
     const { system, user } = buildPrompts(payload);
     try {
-      text = await callOpenAI({ apiKey, system, user });
+      text = await callGroq({ apiKey, system, user });
     } catch (e) {
       if (e.status === 401 || e.status === 403) throw new Error(t.errKeyInvalid);
       throw new Error(t.errGen);

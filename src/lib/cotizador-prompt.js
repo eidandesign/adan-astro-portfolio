@@ -16,11 +16,12 @@ export function buildPrompts({ ctx, nombre, empresa, rate, moneda, lang }) {
   return { system, user };
 }
 
-// Calls OpenAI's chat completions endpoint, trying each model in order.
-// Works in both the browser (fallback path) and Node (Vercel function).
-export async function callOpenAI({ apiKey, system, user }) {
+// Calls Groq's chat completions endpoint (OpenAI-compatible, free tier),
+// trying each model in order. Works in both the browser (fallback path) and
+// Node (Vercel function).
+export async function callGroq({ apiKey, system, user }) {
   const call = async (model) => {
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey.trim() },
       body: JSON.stringify({
@@ -43,7 +44,7 @@ export async function callOpenAI({ apiKey, system, user }) {
   };
 
   let lastErr = null;
-  for (const model of ["gpt-4.1-mini", "gpt-4o-mini"]) {
+  for (const model of ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]) {
     try {
       return await call(model);
     } catch (e) {
@@ -51,5 +52,5 @@ export async function callOpenAI({ apiKey, system, user }) {
       if (e.status === 401 || e.status === 403) throw e;
     }
   }
-  throw lastErr || new Error("openai failed");
+  throw lastErr || new Error("groq failed");
 }

@@ -95,8 +95,8 @@ import "../../styles/cotizador.css";
               </select>
             </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
-              <input type="password" class="cz-input" id="inApiKey" placeholder="OpenAI API key (sk-…)" autocomplete="off" />
-              <div class="cz-hint" id="hintApi">Se guarda solo en este navegador. Créala en platform.openai.com/api-keys</div>
+              <input type="password" class="cz-input" id="inApiKey" placeholder="Groq API key (gsk_…)" autocomplete="off" />
+              <div class="cz-hint" id="hintApi">Se guarda solo en este navegador. Créala gratis en console.groq.com/keys</div>
             </div>
             <button type="button" class="cz-btn" id="btnGenerate">Generar propuesta con IA</button>
             <div class="cz-error" id="genError" hidden></div>
@@ -142,7 +142,7 @@ import "../../styles/cotizador.css";
       const QUOTES_KEY = "cz-quotes-v1";
       const CURRENT_KEY = "cz-current-id";
       const CTX_KEY = "cz-ctx-v1";
-      const OPENAI_KEY = "cz-openai-key";
+      const GROQ_KEY = "cz-groq-key";
 
       // Vanilla-DOM tool page: the cast to `any` keeps strict TS (astro
       // check) out of the way of plain JS element access.
@@ -183,7 +183,7 @@ import "../../styles/cotizador.css";
       if (!data.id) data.id = genId();
 
       let ctx = localStorage.getItem(CTX_KEY) || "";
-      let apiKey = localStorage.getItem(OPENAI_KEY) || "";
+      let apiKey = localStorage.getItem(GROQ_KEY) || "";
       // The access key in plain text — sent to /api/cotizar, which verifies
       // its SHA-256 against the COTIZADOR_KEY_HASH env var.
       let clave = "";
@@ -242,7 +242,7 @@ import "../../styles/cotizador.css";
         $("inFecha").setAttribute("aria-label", t.fecha);
         $("inCtx").setAttribute("aria-label", t.contexto);
         $("inRate").setAttribute("aria-label", t.tarifa);
-        $("inApiKey").setAttribute("aria-label", "OpenAI API key");
+        $("inApiKey").setAttribute("aria-label", "Groq API key");
         $("btnDrawerClose").setAttribute("aria-label", t.cerrar);
         $("hintApi").textContent = t.apiHint;
         $("hintGen").textContent = t.hint;
@@ -408,7 +408,7 @@ import "../../styles/cotizador.css";
       $("inApiKey").addEventListener("input", (e: any) => {
         apiKey = e.currentTarget.value;
         try {
-          localStorage.setItem(OPENAI_KEY, apiKey);
+          localStorage.setItem(GROQ_KEY, apiKey);
         } catch (err) {}
       });
 

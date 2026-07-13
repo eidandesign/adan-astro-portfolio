@@ -1,14 +1,15 @@
-// Vercel serverless function: generates a proposal with OpenAI using a key
-// stored in the OPENAI_API_KEY env var, so no key ever lives in the browser.
-// Access is gated by the builder's own access key: the client sends it in
-// plain text (over HTTPS) and we compare its SHA-256 against the
-// COTIZADOR_KEY_HASH env var — same hash as PASS_HASH in the builder page.
+// Vercel serverless function: generates a proposal with Groq (free tier,
+// OpenAI-compatible) using a key stored in the GROQ_API_KEY env var, so no
+// key ever lives in the browser. Access is gated by the builder's own
+// access key: the client sends it in plain text (over HTTPS) and we compare
+// its SHA-256 against the COTIZADOR_KEY_HASH env var — same hash as
+// PASS_HASH in the builder page.
 //
 // Setup (Vercel dashboard → Project → Settings → Environment Variables):
-//   OPENAI_API_KEY      = sk-…
+//   GROQ_API_KEY        = gsk_… (free at console.groq.com)
 //   COTIZADOR_KEY_HASH  = sha256 hex of the access key
 import { createHash, timingSafeEqual } from "node:crypto";
-import { buildPrompts, callOpenAI } from "../src/lib/cotizador-prompt.js";
+import { buildPrompts, callGroq } from "../src/lib/cotizador-prompt.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -16,7 +17,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
   const expectedHash = process.env.COTIZADOR_KEY_HASH;
   if (!apiKey || !expectedHash) {
     // Tells the client to fall back to a browser-side key.
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
   });
 
   try {
-    const text = await callOpenAI({ apiKey, system, user });
+    const text = await callGroq({ apiKey, system, user });
     res.status(200).json({ text });
   } catch (e) {
     res.status(502).json({ error: "upstream" });
