@@ -75,15 +75,9 @@ async function notificar({ autor, texto, numero, cliente, host }) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 8000);
   try {
-    const res = await fetch(url, { signal: ctrl.signal });
-    const body = await res.text();
-    // TEMP DEBUG (quitar después de diagnosticar): nunca loguea `url` (trae
-    // el apikey) ni phone/apikey en crudo — solo la respuesta de CallMeBot.
-    console.log(
-      `[callmebot] status=${res.status} phoneLen=${phone.length} apikeyLen=${apikey.length} body=${body.slice(0, 300)}`
-    );
+    await fetch(url, { signal: ctrl.signal });
   } catch (e) {
-    console.log(`[callmebot] fetch-error: ${e && e.message}`);
+    // Ignorado a propósito — ver comentario arriba.
   } finally {
     clearTimeout(timer);
   }
