@@ -1,6 +1,9 @@
 // Shared logic for the private quote builder (/cotizador) and the client
-// view page (/cotizador/ver). The quote travels between them encoded in the
-// URL hash, so the viewer works without any backend or database.
+// view page (/cotizador/ver). The quote is saved server-side (see
+// api/quotes.js) and the viewer fetches it by a short id in the URL
+// (?id=...); encodeQuote/decodeQuote remain for old long links (#q=...)
+// generated before that existed, and as a fallback when the backend isn't
+// configured.
 import { buildPrompts, callGroq } from "./cotizador-prompt.js";
 
 export const LABELS = {
@@ -270,6 +273,26 @@ export async function decodeQuote(token) {
   const data = JSON.parse(new TextDecoder().decode(bytes));
   if (!data || !data.q || !data.meta) throw new Error("bad quote");
   return data;
+}
+
+/* ---------- Short link id (quote → /cotizador/ver?id=…) ---------- */
+
+function slugify(s) {
+  return String(s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+// Short, readable id for the client link: quote number + client name, e.g.
+// "nfb-2026-001-juan-perez". Falls back to the quote's internal id if both
+// are blank so the link is never empty.
+export function quoteSlug(data) {
+  const numero = slugify(data.meta.numero);
+  const cliente = slugify(data.meta.nombre || data.meta.empresa);
+  return [numero, cliente].filter(Boolean).join("-") || data.id;
 }
 
 /* ---------- Cover page ---------- */

@@ -1,9 +1,9 @@
 ---
-// Client-facing quote viewer. The full quote travels encoded in the URL hash
-// (#q=…), so the quote itself needs no backend: the builder generates the link
-// and anyone who receives it can read and download it as PDF.
-// The comments panel is the one part that does talk to a server
-// (/api/comentarios) — it hides itself when that endpoint isn't configured.
+// Client-facing quote viewer. Short links (?id=...) fetch the quote from
+// /api/quotes (Supabase); old long links (#q=...) still work by decoding the
+// quote from the URL hash directly, no backend needed.
+// The comments panel also talks to a server (/api/comentarios) — it hides
+// itself when that endpoint isn't configured.
 // Not indexed, excluded from the sitemap.
 import "../../styles/site.css";
 import "../../styles/cotizador.css";
@@ -63,6 +63,7 @@ import "../../styles/cotizador.css";
         postComentario,
         renderComentarios,
       } from "../../lib/cotizador-comentarios.js";
+      import { fetchQuoteRemote } from "../../lib/cotizador-quotes-store.js";
 
       // Vanilla-DOM page: `any` casts keep strict TS out of plain JS access.
       const $ = (id: string) => document.getElementById(id) as any;
@@ -86,14 +87,26 @@ import "../../styles/cotizador.css";
       }
 
       async function load() {
-        const match = location.hash.match(/^#q=(.+)$/);
-        if (!match) return fail();
+        const id = new URLSearchParams(location.search).get("id");
         let data;
-        try {
-          data = await decodeQuote(match[1]);
-        } catch (e) {
-          return fail();
+        if (id) {
+          // Short link: the quote lives in Supabase, keyed by `id`.
+          try {
+            data = await fetchQuoteRemote(id);
+          } catch (e) {
+            return fail();
+          }
+        } else {
+          // Old long link: the quote travels encoded in the URL hash.
+          const match = location.hash.match(/^#q=(.+)$/);
+          if (!match) return fail();
+          try {
+            data = await decodeQuote(match[1]);
+          } catch (e) {
+            return fail();
+          }
         }
+        if (!data || !data.q || !data.meta) return fail();
 
         const t = labelsFor(data.lang);
         document.documentElement.lang = data.lang === "en" ? "en" : "es";

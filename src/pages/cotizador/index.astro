@@ -135,6 +135,7 @@ import "../../styles/cotizador.css";
         renderDoc,
         renderCover,
         encodeQuote,
+        quoteSlug,
         generateProposal,
         genId,
         nextNumero,
@@ -143,6 +144,7 @@ import "../../styles/cotizador.css";
         totalOf,
       } from "../../lib/cotizador.js";
       import { fetchComentarios, renderComentarios } from "../../lib/cotizador-comentarios.js";
+      import { saveQuoteRemote } from "../../lib/cotizador-quotes-store.js";
 
       // To change the access key: run in any browser console —
       //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('nueva-clave'))
@@ -492,8 +494,17 @@ import "../../styles/cotizador.css";
 
       $("btnCopy").addEventListener("click", async () => {
         const t = labelsFor(data.lang);
-        const token = await encodeQuote(data);
-        const url = `${location.origin}/cotizador/ver#q=${token}`;
+        let url;
+        try {
+          const id = quoteSlug(data);
+          await saveQuoteRemote(id, data, clave);
+          url = `${location.origin}/cotizador/ver?id=${encodeURIComponent(id)}`;
+        } catch (e) {
+          // Sin Supabase configurado (o si el guardado falla por lo que sea):
+          // cae de vuelta al link largo de antes, que siempre funciona.
+          const token = await encodeQuote(data);
+          url = `${location.origin}/cotizador/ver#q=${token}`;
+        }
         try {
           await navigator.clipboard.writeText(url);
           toast(t.linkCopiado + " ✓");
