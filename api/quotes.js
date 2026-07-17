@@ -5,8 +5,9 @@
 // (/cotizador/ver?id=nfb-2026-001-juan-perez); esta función guarda y
 // devuelve el JSON completo en Supabase, amarrado a ese id.
 //
-//   GET  /api/quotes?id=<id>   → { data }            (público: el link es la credencial, igual que /api/comentarios)
-//   POST /api/quotes           → { id }              (requiere la clave del cotizador)
+//   GET    /api/quotes?id=<id>   → { data }          (público: el link es la credencial, igual que /api/comentarios)
+//   POST   /api/quotes           → { id }            (requiere la clave del cotizador)
+//   DELETE /api/quotes           → { id }            (requiere la clave del cotizador; borra la cotización guardada, el link deja de funcionar)
 //
 // Setup (Vercel → Project → Settings → Environment Variables):
 //   SUPABASE_URL              = https://xxxx.supabase.co
@@ -77,6 +78,26 @@ export default async function handler(req, res) {
       }
       res.setHeader("Cache-Control", "no-store");
       res.status(200).json({ data: rows[0].data });
+    } catch (e) {
+      res.status(502).json({ error: "upstream" });
+    }
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    const body = req.body || {};
+    if (!checkClave(body.clave)) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const id = String(body.id || "").slice(0, 200);
+    if (!id) {
+      res.status(400).json({ error: "missing-id" });
+      return;
+    }
+    try {
+      await sb(cfg, `?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+      res.status(200).json({ id });
     } catch (e) {
       res.status(502).json({ error: "upstream" });
     }

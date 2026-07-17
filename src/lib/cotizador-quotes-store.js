@@ -24,3 +24,16 @@ export async function fetchQuoteRemote(id) {
   const json = await res.json();
   return json.data;
 }
+
+// Borra la copia guardada en el backend (el link compartido deja de
+// funcionar). Falla en silencio si nunca se guardó ahí (501/404) — el
+// caller solo la usa best-effort al borrar una cotización local.
+export async function deleteQuoteRemote(id, clave) {
+  const res = await fetch("/api/quotes", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id, clave }),
+  });
+  if (res.status === 501 || res.status === 404) throw new QuotesStoreOff();
+  if (!res.ok) throw new Error("delete-failed");
+}

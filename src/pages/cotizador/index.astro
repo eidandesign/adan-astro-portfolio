@@ -144,7 +144,7 @@ import "../../styles/cotizador.css";
         totalOf,
       } from "../../lib/cotizador.js";
       import { fetchComentarios, renderComentarios } from "../../lib/cotizador-comentarios.js";
-      import { saveQuoteRemote } from "../../lib/cotizador-quotes-store.js";
+      import { saveQuoteRemote, deleteQuoteRemote } from "../../lib/cotizador-quotes-store.js";
 
       // To change the access key: run in any browser console —
       //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('nueva-clave'))
@@ -213,6 +213,21 @@ import "../../styles/cotizador.css";
           localStorage.setItem(CURRENT_KEY, data.id);
           localStorage.setItem(CTX_KEY, ctx);
         } catch (e) {}
+        syncRemote();
+      }
+
+      // Si la cotización ya tiene link (remoteId), cada edición se sube sola
+      // a Supabase con un debounce, así el cliente siempre ve la versión
+      // actual sin tener que volver a copiar el link. Best-effort: si falla
+      // (sin red, backend apagado), el próximo cambio o copia lo reintenta.
+      let syncTimer: ReturnType<typeof setTimeout>;
+      function syncRemote() {
+        if (!data.remoteId) return;
+        const snapshot = data;
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(() => {
+          saveQuoteRemote(snapshot.remoteId, snapshot, clave).catch(() => {});
+        }, 1200);
       }
 
       /* ---------- Rendering ---------- */
@@ -378,6 +393,9 @@ import "../../styles/cotizador.css";
           dup.addEventListener("click", () => {
             const copy = JSON.parse(JSON.stringify(q));
             copy.id = genId();
+            // Nunca heredar el remoteId: el duplicado aún no tiene su propio
+            // link guardado, y si lo tuviera sería el del original.
+            delete copy.remoteId;
             copy.meta.numero = nextNumero(quotes);
             copy.meta.fecha = todayStr(copy.lang);
             data = copy;
@@ -402,6 +420,15 @@ import "../../styles/cotizador.css";
             try {
               localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
             } catch (e) {}
+            if (q.remoteId) {
+              // Cancela cualquier auto-sync pendiente para que no re-cree la
+              // cotización en el backend justo después de borrarla.
+              if (q.id === data.id) clearTimeout(syncTimer);
+              // Best-effort: si nunca se guardó en el backend (o ya no está
+              // configurado), esto falla en silencio — la cotización local
+              // ya se borró, que es lo que importa.
+              deleteQuoteRemote(q.remoteId, clave).catch(() => {});
+            }
             if (q.id === data.id) {
               data = quotes[quotes.length - 1] || newQuote(data.lang);
             }
@@ -496,8 +523,16 @@ import "../../styles/cotizador.css";
         const t = labelsFor(data.lang);
         let url;
         try {
-          const id = quoteSlug(data);
+          // Una vez generado, el id del link no cambia aunque después se
+          // edite el número o el nombre del cliente — el link que ya tiene
+          // el cliente sigue siendo válido y ve siempre la versión actual.
+          const id = data.remoteId || quoteSlug(data);
           await saveQuoteRemote(id, data, clave);
+          data.remoteId = id;
+          save();
+          // El save() de arriba agenda un auto-sync, pero esta versión ya
+          // acaba de subirse — cancelarlo evita un POST redundante.
+          clearTimeout(syncTimer);
           url = `${location.origin}/cotizador/ver?id=${encodeURIComponent(id)}`;
         } catch (e) {
           // Sin Supabase configurado (o si el guardado falla por lo que sea):
