@@ -707,6 +707,110 @@
   transform: translate(-50%, 0);
 }
 
+/* ===== Comentarios del cliente ===== */
+/* La página entera scrollea (.cz-body es min-height, no height), así que sin
+   sticky el panel se estira a lo alto del documento y la caja de escribir
+   queda a miles de píxeles del fold. Pegado arriba, el cliente tiene el hilo
+   y el campo a la mano mientras lee. max-height en vez de height: con pocos
+   comentarios el panel mide lo que pesa su contenido, y solo cuando el hilo
+   crece se topa con la pantalla y la lista scrollea por dentro. */
+.cz-comments {
+  flex: none;
+  width: 360px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-light);
+  background-color: var(--surface-background);
+}
+/* `hidden` tiene que ganarle al display:flex de arriba. */
+.cz-comments[hidden] {
+  display: none;
+}
+.cz-comments-head {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+.cz-comments-head .cz-hint {
+  flex-basis: 100%;
+}
+.cz-comments-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.cz-comment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  padding: 14px 16px;
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.cz-comment-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cz-comment-autor {
+  font-family: "Powergrotesk", Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.cz-comment-fecha {
+  flex: none;
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(223, 230, 245, 0.4);
+}
+.cz-comment-texto {
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.cz-comments-form {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--border-light);
+}
+.cz-comments-textarea {
+  min-height: 110px;
+}
+/* Punto en el botón del header cuando la cotización abierta ya tiene
+   comentarios sin más aviso que el WhatsApp. */
+.cz-btn.is-flagged::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background-color: var(--primary, #d8482b);
+  vertical-align: middle;
+}
+
 /* Viewer error state */
 .cz-viewer-error {
   margin: auto;
@@ -733,6 +837,18 @@
   }
   .cz-doc-scroll {
     padding: 24px 12px 60px;
+  }
+  /* Apilado debajo del documento: sin sticky ni alto fijo, la lista crece
+     con la página en vez de scrollear dentro de su propia caja. */
+  .cz-comments {
+    width: 100%;
+    position: static;
+    height: auto;
+    border-left: none;
+    border-top: 1px solid var(--border-light);
+  }
+  .cz-comments-list {
+    overflow-y: visible;
   }
   .cz-paper {
     padding: 40px 28px;

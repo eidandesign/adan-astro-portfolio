@@ -52,6 +52,7 @@ import "../../styles/cotizador.css";
             <button type="button" data-lang="en" id="langEn">EN</button>
           </div>
           <button type="button" class="cz-btn ghost" id="btnList">Cotizaciones</button>
+          <button type="button" class="cz-btn ghost" id="btnComments" hidden>Comentarios</button>
           <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
           <button type="button" class="cz-btn" id="btnPrint">Descargar PDF</button>
         </div>
@@ -112,6 +113,16 @@ import "../../styles/cotizador.css";
           <div class="cz-cover" id="czCover"></div>
           <div class="cz-paper" id="czPaper"></div>
         </main>
+
+        <!-- Comentarios del cliente sobre la cotización abierta. Solo lectura:
+             el hilo es el canal del cliente hacia acá, no una conversación. -->
+        <aside class="cz-comments" id="czComments" data-noprint="1" hidden>
+          <div class="cz-comments-head">
+            <span class="cz-label" id="cmTitle">Comentarios</span>
+            <button type="button" class="cz-drawer-close" id="btnCommentsClose" aria-label="Cerrar">×</button>
+          </div>
+          <div class="cz-comments-list" id="cmList"></div>
+        </aside>
       </div>
     </div>
 
@@ -131,6 +142,7 @@ import "../../styles/cotizador.css";
         fmtMoney,
         totalOf,
       } from "../../lib/cotizador.js";
+      import { fetchComentarios, renderComentarios } from "../../lib/cotizador-comentarios.js";
 
       // To change the access key: run in any browser console —
       //   crypto.subtle.digest('SHA-256', new TextEncoder().encode('nueva-clave'))
@@ -260,9 +272,57 @@ import "../../styles/cotizador.css";
         $("inMoneda").value = data.moneda;
         $("inApiKey").value = apiKey;
 
+        $("cmTitle").textContent = t.comentarios;
+        $("btnCommentsClose").setAttribute("aria-label", t.cerrar);
+
         renderList();
         renderPaper();
+        loadComments();
       }
+
+      /* ---------- Client comments (read-only) ---------- */
+      // Cada cotización tiene su propio hilo, así que un fetch en vuelo puede
+      // llegar después de que ya cambiaste de cotización: el token descarta
+      // las respuestas que ya no corresponden a la que está abierta.
+      let commentsToken = 0;
+      let commentsOpen = false;
+
+      async function loadComments() {
+        const t = labelsFor(data.lang);
+        const token = ++commentsToken;
+        const quoteId = data.id;
+        let comentarios: any[];
+        try {
+          comentarios = await fetchComentarios(quoteId);
+        } catch (e) {
+          // Endpoint apagado o sin configurar: el botón no aparece.
+          if (token !== commentsToken) return;
+          $("btnComments").hidden = true;
+          $("czComments").hidden = true;
+          commentsOpen = false;
+          return;
+        }
+        if (token !== commentsToken) return;
+
+        $("btnComments").hidden = false;
+        $("btnComments").textContent = `${t.comentarios} (${comentarios.length})`;
+        $("btnComments").classList.toggle("is-flagged", comentarios.length > 0);
+        renderComentarios($("cmList"), comentarios, {
+          lang: data.lang,
+          vacio: t.sinComentarios,
+          anon: t.anonimo,
+        });
+        $("czComments").hidden = !commentsOpen;
+      }
+
+      $("btnComments").addEventListener("click", () => {
+        commentsOpen = !commentsOpen;
+        $("czComments").hidden = !commentsOpen;
+      });
+      $("btnCommentsClose").addEventListener("click", () => {
+        commentsOpen = false;
+        $("czComments").hidden = true;
+      });
 
       /* ---------- Saved quotes drawer ---------- */
       function renderList() {

@@ -2,6 +2,9 @@
   "functions": {
     "api/cotizar.js": {
       "maxDuration": 60
+    },
+    "api/comentarios.js": {
+      "maxDuration": 15
     }
   }
 }

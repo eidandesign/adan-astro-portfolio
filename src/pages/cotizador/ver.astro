@@ -1,8 +1,10 @@
 ---
 // Client-facing quote viewer. The full quote travels encoded in the URL hash
-// (#q=…), so no backend or database is needed: the builder generates the link
-// and anyone who receives it can read and download the quote as PDF.
-// Read-only, not indexed, excluded from the sitemap.
+// (#q=…), so the quote itself needs no backend: the builder generates the link
+// and anyone who receives it can read and download it as PDF.
+// The comments panel is the one part that does talk to a server
+// (/api/comentarios) — it hides itself when that endpoint isn't configured.
+// Not indexed, excluded from the sitemap.
 import "../../styles/site.css";
 import "../../styles/cotizador.css";
 ---
@@ -33,17 +35,46 @@ import "../../styles/cotizador.css";
         <div class="cz-paper" id="czPaper" hidden></div>
         <p class="cz-viewer-error" id="czError" hidden></p>
       </main>
+
+      <!-- Comments panel: shown only once the quote decodes and the API
+           answers, so a broken link or an unconfigured endpoint never shows
+           the client a half-working form. -->
+      <aside class="cz-comments" id="czComments" data-noprint="1" hidden>
+        <div class="cz-comments-head">
+          <span class="cz-label" id="cmTitle">Comentarios</span>
+          <p class="cz-hint" id="cmHint"></p>
+        </div>
+        <div class="cz-comments-list" id="cmList"></div>
+        <form class="cz-comments-form" id="cmForm">
+          <input class="cz-input" id="cmAutor" placeholder="Tu nombre" autocomplete="name" />
+          <textarea class="cz-textarea cz-comments-textarea" id="cmTexto" maxlength="2000"></textarea>
+          <div class="cz-error" id="cmError" hidden></div>
+          <button type="submit" class="cz-btn" id="cmSend">Enviar comentario</button>
+        </form>
+      </aside>
     </div>
+
+    <div class="cz-toast" id="czToast" role="status"></div>
 
     <script>
       import { labelsFor, decodeQuote, renderDoc, renderCover } from "../../lib/cotizador.js";
+      import {
+        fetchComentarios,
+        postComentario,
+        renderComentarios,
+      } from "../../lib/cotizador-comentarios.js";
 
       // Vanilla-DOM page: `any` casts keep strict TS out of plain JS access.
-      const paper = document.getElementById("czPaper") as any;
-      const cover = document.getElementById("czCover") as any;
-      const errorBox = document.getElementById("czError") as any;
-      const btnPrint = document.getElementById("btnPrint") as any;
-      const hdrTag = document.getElementById("hdrTag") as any;
+      const $ = (id: string) => document.getElementById(id) as any;
+      const paper = $("czPaper");
+      const cover = $("czCover");
+      const errorBox = $("czError");
+      const btnPrint = $("btnPrint");
+      const hdrTag = $("hdrTag");
+      const panel = $("czComments");
+
+      // The client's name is remembered so a second comment doesn't ask again.
+      const AUTOR_KEY = "cz-comment-autor";
 
       function fail() {
         errorBox.textContent = labelsFor(document.documentElement.lang).linkInvalido;
@@ -51,6 +82,7 @@ import "../../styles/cotizador.css";
         paper.hidden = true;
         cover.hidden = true;
         btnPrint.hidden = true;
+        panel.hidden = true;
       }
 
       async function load() {
@@ -76,7 +108,99 @@ import "../../styles/cotizador.css";
 
         btnPrint.textContent = t.descargar;
         btnPrint.hidden = false;
+
+        setupComments(data);
       }
+
+      /* ---------- Comments ---------- */
+      let current: any = null;
+      let sending = false;
+      let toastTimer: ReturnType<typeof setTimeout>;
+
+      function toast(msg: string) {
+        const node = $("czToast");
+        node.textContent = msg;
+        node.classList.add("is-visible");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => node.classList.remove("is-visible"), 2600);
+      }
+
+      function paint(comentarios: any[]) {
+        const t = labelsFor(current.lang);
+        renderComentarios($("cmList"), comentarios, {
+          lang: current.lang,
+          vacio: t.sinComentariosCliente,
+          anon: t.anonimo,
+        });
+      }
+
+      async function setupComments(data: any) {
+        current = data;
+        const t = labelsFor(data.lang);
+        $("cmTitle").textContent = t.comentarios;
+        $("cmHint").textContent = t.comentariosHint;
+        $("cmAutor").placeholder = t.phAutor;
+        $("cmAutor").setAttribute("aria-label", t.phAutor);
+        $("cmTexto").placeholder = t.phComentario;
+        $("cmTexto").setAttribute("aria-label", t.comentarios);
+        $("cmSend").textContent = t.enviarComentario;
+        $("cmAutor").value =
+          $("cmAutor").value || localStorage.getItem(AUTOR_KEY) || data.meta.nombre || "";
+
+        try {
+          paint(await fetchComentarios(data.id));
+          panel.hidden = false;
+        } catch (e) {
+          // Comentarios apagados o caídos: el cliente ve la cotización
+          // completa igual, que es lo que vino a hacer.
+          panel.hidden = true;
+        }
+      }
+
+      $("cmForm").addEventListener("submit", async (e: any) => {
+        e.preventDefault();
+        if (sending || !current) return;
+        const t = labelsFor(current.lang);
+        const errBox = $("cmError");
+        errBox.hidden = true;
+
+        const texto = $("cmTexto").value.trim();
+        if (!texto) {
+          errBox.textContent = t.errComentarioVacio;
+          errBox.hidden = false;
+          $("cmTexto").focus();
+          return;
+        }
+
+        const autor = $("cmAutor").value.trim();
+        sending = true;
+        $("cmSend").disabled = true;
+        $("cmSend").textContent = t.enviandoComentario;
+        try {
+          await postComentario({
+            quote: current.id,
+            autor,
+            texto,
+            numero: current.meta.numero || "",
+            cliente: [current.meta.nombre, current.meta.empresa].filter(Boolean).join(" · "),
+          });
+          try {
+            localStorage.setItem(AUTOR_KEY, autor);
+          } catch (err) {}
+          $("cmTexto").value = "";
+          // Re-fetch instead of appending: así el cliente ve el hilo real,
+          // incluidos comentarios de otra sesión o de otro dispositivo.
+          paint(await fetchComentarios(current.id));
+          toast(t.comentarioEnviado);
+        } catch (err) {
+          errBox.textContent = t.errComentario;
+          errBox.hidden = false;
+        } finally {
+          sending = false;
+          $("cmSend").disabled = false;
+          $("cmSend").textContent = t.enviarComentario;
+        }
+      });
 
       btnPrint.addEventListener("click", () => window.print());
       window.addEventListener("hashchange", load);
