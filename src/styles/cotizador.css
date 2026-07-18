@@ -1331,6 +1331,40 @@
   color: var(--text-secondary);
 }
 
+/* ===== Aprobación (visor) ===== */
+/* Aprobada: el botón deja de ser CTA y queda como sello verde de confirmación. */
+.cz-approve.is-approved {
+  background-color: transparent;
+  border-color: #3e9d6b;
+  color: #6fcf97;
+  cursor: default;
+  opacity: 1;
+}
+/* Pequeño brinco al aprobar (solo al hacer clic, no al restaurar el estado). */
+.cz-approve.is-pop {
+  animation: cz-approve-pop 0.5s ease;
+}
+@keyframes cz-approve-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+/* Canvas de confeti de una sola vida: el script lo crea y lo quita al acabar. */
+.cz-confetti {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 80;
+}
+
 /* ===== Viewer entrance & scroll reveals ===== */
 /* Solo en /cotizador/ver: el script agrega `cz-animate` al <body> (y `cz-rv`
    a los bloques del documento) después de renderizar. El builder nunca las

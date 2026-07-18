@@ -52,7 +52,8 @@ import "../../styles/cotizador.css";
         <span class="cz-header-tag" id="hdrTag">Cotización</span>
       </span>
       <div class="cz-header-actions">
-        <button type="button" class="cz-btn" id="btnPrint" hidden>Descargar PDF</button>
+        <button type="button" class="cz-btn cz-approve" id="btnApprove" hidden>Aprobar cotización</button>
+        <button type="button" class="cz-btn ghost" id="btnPrint" hidden>Descargar PDF</button>
       </div>
     </header>
 
@@ -87,6 +88,7 @@ import "../../styles/cotizador.css";
 
     <script>
       import {
+        LABELS,
         labelsFor,
         decodeQuote,
         renderDoc,
@@ -109,11 +111,14 @@ import "../../styles/cotizador.css";
       const thanksSheet = $("czThanks");
       const errorBox = $("czError");
       const btnPrint = $("btnPrint");
+      const btnApprove = $("btnApprove");
       const hdrTag = $("hdrTag");
       const panel = $("czComments");
 
       // The client's name is remembered so a second comment doesn't ask again.
       const AUTOR_KEY = "cz-comment-autor";
+      // Approval state per quote, so on revisits the button stays "Aprobada ✓".
+      const approvedKey = (data: any) => `cz-approved:${data.id || data.meta.numero || "q"}`;
 
       function fail() {
         errorBox.textContent = labelsFor(document.documentElement.lang).linkInvalido;
@@ -123,6 +128,7 @@ import "../../styles/cotizador.css";
         valorSheet.hidden = true;
         thanksSheet.hidden = true;
         btnPrint.hidden = true;
+        btnApprove.hidden = true;
         panel.hidden = true;
       }
 
@@ -165,6 +171,18 @@ import "../../styles/cotizador.css";
 
         btnPrint.textContent = t.descargar;
         btnPrint.hidden = false;
+
+        // Approve button: reset (load() re-runs on hashchange) and restore a
+        // previous approval from this browser; comments may confirm it later.
+        btnApprove.classList.remove("is-approved", "is-pop");
+        btnApprove.disabled = false;
+        btnApprove.textContent = t.aprobar;
+        btnApprove.hidden = false;
+        let stored = null;
+        try {
+          stored = localStorage.getItem(approvedKey(data));
+        } catch (err) {}
+        if (stored) markApproved(data);
 
         initReveals();
         setupComments(data);
@@ -289,8 +307,12 @@ import "../../styles/cotizador.css";
           $("cmAutor").value || localStorage.getItem(AUTOR_KEY) || data.meta.nombre || "";
 
         try {
-          paint(await fetchComentarios(data.id));
+          const comentarios = await fetchComentarios(data.id);
+          paint(comentarios);
           panel.hidden = false;
+          // Una aprobación hecha desde otro dispositivo viaja como comentario
+          // marcado: si está en el hilo, el botón ya llega en "Aprobada ✓".
+          if (comentarios.some(esAprobacion)) markApproved(data);
         } catch (e) {
           // Comentarios apagados o caídos: el cliente ve la cotización
           // completa igual, que es lo que vino a hacer.
@@ -342,6 +364,117 @@ import "../../styles/cotizador.css";
           $("cmSend").textContent = t.enviarComentario;
         }
       });
+
+      /* ---------- Aprobación ---------- */
+      // El texto del comentario de aprobación es fijo por idioma: sirve de
+      // marca para reconocer una cotización ya aprobada al volver a abrirla.
+      function esAprobacion(c: any) {
+        return (
+          typeof c.texto === "string" &&
+          (c.texto.startsWith(LABELS.es.aprobadaComentario) ||
+            c.texto.startsWith(LABELS.en.aprobadaComentario))
+        );
+      }
+
+      function markApproved(data: any) {
+        btnApprove.disabled = true;
+        btnApprove.classList.add("is-approved");
+        btnApprove.textContent = labelsFor(data.lang).aprobada;
+        try {
+          localStorage.setItem(approvedKey(data), "1");
+        } catch (err) {}
+      }
+
+      btnApprove.addEventListener("click", async () => {
+        if (!current || btnApprove.disabled) return;
+        const t = labelsFor(current.lang);
+        markApproved(current);
+        btnApprove.classList.add("is-pop");
+        confettiBurst(btnApprove);
+        toast(t.aprobadaToast);
+
+        // Avisar a No Flag Brand vía el hilo de comentarios. Si el endpoint
+        // está apagado la fiesta local ya pasó y el estado quedó guardado.
+        if (panel.hidden) return;
+        try {
+          const autor = $("cmAutor").value.trim() || current.meta.nombre || "";
+          await postComentario({
+            quote: current.id,
+            autor,
+            texto: t.aprobadaComentario,
+            numero: current.meta.numero || "",
+            cliente: [current.meta.nombre, current.meta.empresa].filter(Boolean).join(" · "),
+          });
+          paint(await fetchComentarios(current.id));
+        } catch (err) {}
+      });
+
+      // Confeti casero sobre un canvas de una sola vida: explota desde el
+      // botón, cae con gravedad y el canvas se quita solo al terminar.
+      function confettiBurst(origin: any) {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const canvas = document.createElement("canvas");
+        canvas.className = "cz-confetti";
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.scale(dpr, dpr);
+        document.body.appendChild(canvas);
+
+        const rect = origin.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const colors = ["#d8482b", "#e8a33d", "#dfe6f5", "#d4d2cf", "#6fcf97"];
+        const parts: any[] = [];
+        for (let i = 0; i < 160; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const speed = 3 + Math.random() * 9;
+          parts.push({
+            x: cx,
+            y: cy,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 5,
+            w: 4 + Math.random() * 5,
+            h: 7 + Math.random() * 6,
+            rot: Math.random() * Math.PI,
+            vr: (Math.random() - 0.5) * 0.3,
+            color: colors[i % colors.length],
+            life: 0,
+            ttl: 110 + Math.random() * 70,
+          });
+        }
+
+        // Vida por frames + tope en tiempo real: en pestañas con rAF
+        // acelerado o estrangulado el canvas igual se retira solo.
+        const started = performance.now();
+        function frame() {
+          if (performance.now() - started > 6000) return canvas.remove();
+          ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+          let alive = 0;
+          for (const p of parts) {
+            p.life++;
+            if (p.life > p.ttl) continue;
+            p.vy += 0.16;
+            p.vx *= 0.99;
+            p.x += p.vx;
+            p.y += p.vy;
+            p.rot += p.vr;
+            ctx.globalAlpha = Math.max(0, 1 - p.life / p.ttl);
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+            ctx.restore();
+            alive++;
+          }
+          if (alive) requestAnimationFrame(frame);
+          else canvas.remove();
+        }
+        requestAnimationFrame(frame);
+      }
 
       btnPrint.addEventListener("click", () => window.print());
       window.addEventListener("hashchange", load);

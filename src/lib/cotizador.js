@@ -59,6 +59,10 @@ export const LABELS = {
     claveIncorrecta: "Clave incorrecta.",
     // Viewer
     linkInvalido: "Este link no contiene una cotización válida. Pide uno nuevo a quien te lo envió.",
+    aprobar: "Aprobar cotización",
+    aprobada: "Aprobada ✓",
+    aprobadaToast: "¡Cotización aprobada! 🎉",
+    aprobadaComentario: "✅ Cotización aprobada",
     // Comments
     comentarios: "Comentarios",
     comentariosHint:
@@ -132,6 +136,10 @@ export const LABELS = {
     entrar: "Enter",
     claveIncorrecta: "Wrong key.",
     linkInvalido: "This link doesn't contain a valid quote. Ask the sender for a new one.",
+    aprobar: "Approve quote",
+    aprobada: "Approved ✓",
+    aprobadaToast: "Quote approved! 🎉",
+    aprobadaComentario: "✅ Quote approved",
     comentarios: "Comments",
     comentariosHint:
       "Questions, tweaks, anything you'd like changed? Write it here and it goes straight to No Flag Brand.",
