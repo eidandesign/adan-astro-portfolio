@@ -507,6 +507,13 @@ import "../../styles/cotizador.css";
       });
       $("inRate").addEventListener("change", (e: any) => {
         data.rate = Number(e.currentTarget.value.replace(/[^0-9.]/g, "")) || 0;
+        // Las partidas cotizadas por horas siguen la tarifa; las de precio
+        // fijo (horas: null) se quedan como están — por eso son fijas.
+        for (const inv of data.q.inversion) {
+          if (inv.horas !== null && inv.horas !== undefined) {
+            inv.precio = inv.horas * data.rate;
+          }
+        }
         save();
         renderPaper();
       });
