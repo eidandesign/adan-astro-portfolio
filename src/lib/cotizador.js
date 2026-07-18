@@ -539,7 +539,6 @@ export function renderDoc(root, data, opts = {}) {
 
   /* ===== Page 3: 03 Fases y tiempos + spacious timeline ===== */
   const p3 = sheet();
-  p3.classList.add("cz-paper-timeline");
   p3.appendChild(contHead());
 
   const fases = el("section", "cz-sec cz-sec-flush");
