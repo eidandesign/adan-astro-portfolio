@@ -776,9 +776,10 @@ export function renderThanks(root, data, opts = {}) {
     editableText(el("p", "cz-thanks-msg", msg), (v) => (data.q.gracias = v))
   );
 
-  if (data.meta.contacto) {
-    body.appendChild(el("p", "cz-thanks-contact", data.meta.contacto));
-  }
+  const firma = el("div", "cz-thanks-signature");
+  firma.appendChild(el("p", "cz-thanks-signature-name", "Adán Careta H."));
+  firma.appendChild(el("p", "cz-thanks-signature-title", "CEO/Fundador"));
+  body.appendChild(firma);
   root.appendChild(body);
 
   const foot = el("div", "cz-thanks-foot");

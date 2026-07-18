@@ -166,7 +166,91 @@ import "../../styles/cotizador.css";
         btnPrint.textContent = t.descargar;
         btnPrint.hidden = false;
 
+        initReveals();
         setupComments(data);
+      }
+
+      /* ---------- Entrance & scroll reveals ---------- */
+      // Portada con entrada escalonada al abrir y bloques del documento
+      // apareciendo al hacer scroll (estilos en cotizador.css, sección
+      // "Viewer entrance"). Solo el visor las activa: sin JS, sin la clase
+      // `cz-animate` ni los `cz-rv`, todo se ve normal.
+      let revealObserver: any = null;
+
+      function initReveals() {
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        if (typeof IntersectionObserver === "undefined") return;
+        document.body.classList.add("cz-animate");
+        // load() puede correr de nuevo (hashchange): soltar los nodos viejos.
+        if (revealObserver) revealObserver.disconnect();
+
+        const targets = document.querySelectorAll(
+          [
+            ".cz-paper .cz-doc-top",
+            ".cz-paper .cz-doc-prep",
+            ".cz-paper .cz-doc-h1",
+            ".cz-paper .cz-cont-head",
+            ".cz-paper .cz-sec",
+            ".cz-paper .cz-terms-col",
+            ".cz-paper .cz-doc-vigencia",
+            ".cz-paper .cz-doc-foot",
+            ".cz-valor > *",
+            ".cz-thanks-logo",
+            ".cz-thanks-body",
+            ".cz-thanks-foot",
+          ].join(", ")
+        );
+
+        revealObserver = new IntersectionObserver(
+          (entries: any[]) => {
+            // Los que entran juntos al viewport se escalonan entre sí; uno
+            // que entra solo (scroll lento) aparece sin espera extra.
+            let batch = 0;
+            for (const entry of entries) {
+              if (!entry.isIntersecting) continue;
+              entry.target.style.transitionDelay = `${batch * 90}ms`;
+              entry.target.classList.add("is-in");
+              revealObserver.unobserve(entry.target);
+              batch++;
+            }
+          },
+          { rootMargin: "0px 0px -10% 0px", threshold: 0.05 }
+        );
+
+        // Lo que ya está en el primer viewport se revela de inmediato (con
+        // cascada), sin esperar al observer.
+        const vh = window.innerHeight;
+        let initial = 0;
+        for (const node of targets) {
+          node.classList.add("cz-rv");
+          const r = node.getBoundingClientRect();
+          if (r.top < vh * 0.9 && r.bottom > 0) {
+            (node as any).style.transitionDelay = `${initial * 90}ms`;
+            node.classList.add("is-in");
+            initial++;
+          } else {
+            revealObserver.observe(node);
+          }
+        }
+
+        // Seguro: si IntersectionObserver existe pero nunca entrega callbacks
+        // (webviews con throttling agresivo), revelar todo — mejor perder la
+        // animación que dejar la cotización invisible. El sentinel observa
+        // el body (siempre intersecta): si IO vive, dispara al instante y el
+        // timeout no hace nada.
+        let ioAlive = false;
+        const sentinel = new IntersectionObserver(() => {
+          ioAlive = true;
+          sentinel.disconnect();
+        });
+        sentinel.observe(document.body);
+        setTimeout(() => {
+          if (ioAlive) return;
+          revealObserver.disconnect();
+          for (const node of document.querySelectorAll(".cz-rv, .cz-timeline")) {
+            node.classList.add("is-in");
+          }
+        }, 1600);
       }
 
       /* ---------- Comments ---------- */

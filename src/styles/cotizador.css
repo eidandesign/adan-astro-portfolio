@@ -732,11 +732,19 @@
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.92);
 }
-.cz-thanks-contact {
-  margin-top: 20px;
+.cz-thanks-signature {
+  margin-top: 28px;
+}
+.cz-thanks-signature-name {
   font-size: 15px;
   font-weight: 500;
   color: #fff;
+}
+.cz-thanks-signature-title {
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.7);
 }
 .cz-thanks-foot {
   position: relative;
@@ -1323,6 +1331,92 @@
   color: var(--text-secondary);
 }
 
+/* ===== Viewer entrance & scroll reveals ===== */
+/* Solo en /cotizador/ver: el script agrega `cz-animate` al <body> (y `cz-rv`
+   a los bloques del documento) después de renderizar. El builder nunca las
+   agrega, así que editar ahí no parpadea. Todo screen-only: el PDF imprime
+   el estado final (refuerzo en @media print más abajo) y con
+   prefers-reduced-motion el script ni siquiera activa las clases. */
+@media screen {
+  /* Portada: la hoja aparece primero, luego logo → mosaico → cliente. */
+  .cz-animate .cz-cover {
+    animation: cz-cover-in 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  }
+  .cz-animate .cz-cover-logo {
+    animation: cz-fade-down 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 0.45s both;
+  }
+  .cz-animate .cz-cover-art {
+    animation: cz-art-in 1s cubic-bezier(0.22, 0.61, 0.36, 1) 0.6s both;
+  }
+  .cz-animate .cz-cover-client {
+    animation: cz-fade-up 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) 0.95s both;
+  }
+  /* Bloques del documento: ocultos hasta entrar al viewport; el observer
+     agrega `is-in` y escalona el delay por lote para el efecto cascada. */
+  .cz-rv {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  .cz-rv.is-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cz-cover-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cz-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cz-art-in {
+  from {
+    opacity: 0;
+    transform: scale(1.04) translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cz-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cz-animate .cz-cover,
+  .cz-animate .cz-cover-logo,
+  .cz-animate .cz-cover-art,
+  .cz-animate .cz-cover-client {
+    animation: none;
+  }
+  .cz-rv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 /* ===== Responsive ===== */
 /* Screen-only: a US-letter print page is ~816px wide, so an unscoped
    max-width query would also apply the mobile layout to the printed PDF. */
@@ -1527,5 +1621,17 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  /* Same for the viewer's entrance/scroll reveals. */
+  .cz-animate .cz-cover,
+  .cz-animate .cz-cover-logo,
+  .cz-animate .cz-cover-art,
+  .cz-animate .cz-cover-client {
+    animation: none !important;
+  }
+  .cz-rv {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
   }
 }
