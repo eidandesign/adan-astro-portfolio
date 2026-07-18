@@ -32,7 +32,9 @@ import "../../styles/cotizador.css";
     <div class="cz-main">
       <main class="cz-doc-scroll" id="docScroll">
         <div class="cz-cover" id="czCover" hidden></div>
-        <div class="cz-paper" id="czPaper" hidden></div>
+        <div class="cz-sheets" id="czPaper" hidden></div>
+        <div class="cz-valor" id="czValor" hidden></div>
+        <div class="cz-thanks" id="czThanks" hidden></div>
         <p class="cz-viewer-error" id="czError" hidden></p>
       </main>
 
@@ -57,7 +59,14 @@ import "../../styles/cotizador.css";
     <div class="cz-toast" id="czToast" role="status"></div>
 
     <script>
-      import { labelsFor, decodeQuote, renderDoc, renderCover } from "../../lib/cotizador.js";
+      import {
+        labelsFor,
+        decodeQuote,
+        renderDoc,
+        renderCover,
+        renderValor,
+        renderThanks,
+      } from "../../lib/cotizador.js";
       import {
         fetchComentarios,
         postComentario,
@@ -69,6 +78,8 @@ import "../../styles/cotizador.css";
       const $ = (id: string) => document.getElementById(id) as any;
       const paper = $("czPaper");
       const cover = $("czCover");
+      const valorSheet = $("czValor");
+      const thanksSheet = $("czThanks");
       const errorBox = $("czError");
       const btnPrint = $("btnPrint");
       const hdrTag = $("hdrTag");
@@ -82,6 +93,8 @@ import "../../styles/cotizador.css";
         errorBox.hidden = false;
         paper.hidden = true;
         cover.hidden = true;
+        valorSheet.hidden = true;
+        thanksSheet.hidden = true;
         btnPrint.hidden = true;
         panel.hidden = true;
       }
@@ -115,6 +128,10 @@ import "../../styles/cotizador.css";
 
         renderCover(cover, data);
         renderDoc(paper, data, { editable: false });
+        // renderValor manages its own hidden state: old quotes without
+        // beneficios simply don't show the closing sheet.
+        renderValor(valorSheet, data, { editable: false });
+        renderThanks(thanksSheet, data, { editable: false });
         cover.hidden = false;
         paper.hidden = false;
         errorBox.hidden = true;

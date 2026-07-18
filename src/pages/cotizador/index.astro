@@ -51,10 +51,12 @@ import "../../styles/cotizador.css";
             <button type="button" data-lang="es" id="langEs">ES</button>
             <button type="button" data-lang="en" id="langEn">EN</button>
           </div>
-          <button type="button" class="cz-btn ghost" id="btnList">Cotizaciones</button>
           <button type="button" class="cz-btn ghost" id="btnComments" hidden>Comentarios</button>
-          <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
-          <button type="button" class="cz-btn" id="btnPrint">Descargar PDF</button>
+          <button type="button" class="cz-btn ghost" id="btnList">
+            <span id="btnListLabel">Cotizaciones</span>
+            <span class="cz-badge" id="btnListCount">0</span>
+          </button>
+          <button type="button" class="cz-btn" id="btnNew">Nueva cotización</button>
         </div>
       </header>
 
@@ -95,6 +97,10 @@ import "../../styles/cotizador.css";
                 <option value="EUR">EUR</option>
               </select>
             </div>
+            <div class="cz-deadline-row">
+              <span id="lblDeadline">Fecha límite</span>
+              <input type="date" class="cz-input" id="inDeadline" aria-label="Fecha límite" />
+            </div>
             <div style="display: flex; flex-direction: column; gap: 6px;">
               <input type="password" class="cz-input" id="inApiKey" placeholder="Groq API key (gsk_…)" autocomplete="off" />
               <div class="cz-hint" id="hintApi">Se guarda solo en este navegador. Créala gratis en console.groq.com/keys</div>
@@ -104,14 +110,17 @@ import "../../styles/cotizador.css";
             <div class="cz-hint" id="hintGen"></div>
           </div>
 
-          <div class="cz-group">
-            <button type="button" class="cz-btn ghost" id="btnNew">Nueva cotización</button>
+          <div class="cz-group cz-sidebar-actions">
+            <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
+            <button type="button" class="cz-btn ghost" id="btnPrint">Descargar PDF</button>
           </div>
         </aside>
 
         <main class="cz-doc-scroll">
           <div class="cz-cover" id="czCover"></div>
-          <div class="cz-paper" id="czPaper"></div>
+          <div class="cz-sheets" id="czPaper"></div>
+          <div class="cz-valor" id="czValor"></div>
+          <div class="cz-thanks" id="czThanks"></div>
         </main>
 
         <!-- Comentarios del cliente sobre la cotización abierta. Solo lectura:
@@ -134,6 +143,8 @@ import "../../styles/cotizador.css";
         defaultQuote,
         renderDoc,
         renderCover,
+        renderValor,
+        renderThanks,
         encodeQuote,
         quoteSlug,
         generateProposal,
@@ -233,23 +244,26 @@ import "../../styles/cotizador.css";
       /* ---------- Rendering ---------- */
       const paper = $("czPaper");
       const cover = $("czCover");
+      const valor = $("czValor");
+      const thanks = $("czThanks");
 
       function renderPaper() {
+        const onChange = (_d: any, rerender: any) => {
+          save();
+          if (rerender) renderPaper();
+        };
         renderCover(cover, data);
-        renderDoc(paper, data, {
-          editable: true,
-          onChange: (_d: any, rerender: any) => {
-            save();
-            if (rerender) renderPaper();
-          },
-        });
+        renderDoc(paper, data, { editable: true, onChange });
+        renderValor(valor, data, { editable: true, onChange });
+        renderThanks(thanks, data, { editable: true, onChange });
       }
 
       function refresh() {
         const t = labelsFor(data.lang);
         document.documentElement.lang = data.lang;
         $("hdrTag").textContent = t.cotizador;
-        $("btnList").textContent = `${t.guardadas} (${quotes.length})`;
+        $("btnListLabel").textContent = t.guardadas;
+        $("btnListCount").textContent = String(quotes.length);
         $("btnCopy").textContent = t.copiarLink;
         $("btnPrint").textContent = t.descargar;
         $("btnNew").textContent = t.nueva;
@@ -258,6 +272,8 @@ import "../../styles/cotizador.css";
         $("lblCliente").textContent = t.datosCliente;
         $("lblContexto").textContent = t.contexto;
         $("lblTarifa").textContent = t.tarifa;
+        $("lblDeadline").textContent = t.fechaLimite;
+        $("inDeadline").setAttribute("aria-label", t.fechaLimite);
         $("inNombre").placeholder = t.phNombre;
         $("inEmpresa").placeholder = t.phEmpresa;
         $("inContacto").placeholder = t.phContacto;
@@ -285,6 +301,7 @@ import "../../styles/cotizador.css";
         $("inNumero").value = data.meta.numero;
         $("inFecha").value = data.meta.fecha;
         $("inCtx").value = ctx;
+        $("inDeadline").value = data.meta.deadline || "";
         $("inRate").value = data.rate;
         $("inMoneda").value = data.moneda;
         $("inApiKey").value = apiKey;
@@ -482,6 +499,10 @@ import "../../styles/cotizador.css";
       }
       $("inCtx").addEventListener("input", (e: any) => {
         ctx = e.currentTarget.value;
+        save();
+      });
+      $("inDeadline").addEventListener("change", (e: any) => {
+        data.meta.deadline = e.currentTarget.value;
         save();
       });
       $("inRate").addEventListener("change", (e: any) => {

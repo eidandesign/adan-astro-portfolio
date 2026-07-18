@@ -51,6 +51,7 @@ export default async function handler(req, res) {
     rate: Number(body.rate) || 40,
     moneda: ["USD", "MXN", "EUR"].includes(body.moneda) ? body.moneda : "USD",
     lang: body.lang === "en" ? "en" : "es",
+    deadline: String(body.deadline || "").slice(0, 40),
   });
 
   try {
