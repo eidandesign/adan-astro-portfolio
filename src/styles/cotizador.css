@@ -298,9 +298,18 @@
   display: flex;
   min-height: 0;
 }
+/* La página entera scrollea (.cz-body es min-height, no height — ver nota en
+   Comentarios más abajo), así que sin sticky el panel se iría con el scroll
+   del documento. Pegado arriba, queda a la vista mientras se navega la
+   cotización a la derecha; max-height + overflow interno para cuando su
+   propio contenido no cabe en la pantalla. */
 .cz-sidebar {
   flex: none;
   width: 380px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  max-height: 100vh;
   overflow-y: auto;
   border-right: 1px solid var(--border-light);
   padding: 28px;
@@ -1321,8 +1330,12 @@
   .cz-main {
     flex-direction: column;
   }
+  /* Apilado arriba del documento: sin sticky ni alto fijo, crece con la
+     página en vez de pegarse y comerse la pantalla en móvil. */
   .cz-sidebar {
     width: 100%;
+    position: static;
+    max-height: none;
     border-right: none;
     border-bottom: 1px solid var(--border-light);
   }

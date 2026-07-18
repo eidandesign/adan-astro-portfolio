@@ -17,6 +17,33 @@ import "../../styles/cotizador.css";
     <meta name="robots" content="noindex, nofollow" />
     <meta name="theme-color" content="#0c1015" />
     <link rel="icon" type="image/png" href="/images/favicon.png" />
+
+    <!-- Open Graph / Twitter: da tarjeta de preview al compartir el link por
+         WhatsApp, Slack, etc. noindex arriba solo saca la página de buscadores
+         — los crawlers de estas apps la leen igual para armar la tarjeta.
+         El título/descripción son genéricos: la página es una sola build
+         estática compartida por todas las cotizaciones (?id=... se resuelve
+         en el navegador del cliente, no al momento de generar el HTML), así
+         que no pueden variar por cliente sin una función server-side aparte. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="No Flag Brand" />
+    <meta property="og:title" content="Cotización — No Flag Brand" />
+    <meta
+      property="og:description"
+      content="Revisa la propuesta y da seguimiento directo con No Flag Brand."
+    />
+    <meta property="og:url" content={new URL("/cotizador/ver", Astro.site)} />
+    <meta property="og:image" content={new URL("/images/forms.png", Astro.site)} />
+    <meta property="og:image:width" content="310" />
+    <meta property="og:image:height" content="623" />
+    <meta property="og:locale" content="es_MX" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Cotización — No Flag Brand" />
+    <meta
+      name="twitter:description"
+      content="Revisa la propuesta y da seguimiento directo con No Flag Brand."
+    />
+    <meta name="twitter:image" content={new URL("/images/forms.png", Astro.site)} />
   </head>
   <body class="cz-body">
     <header class="cz-header" data-noprint="1">
