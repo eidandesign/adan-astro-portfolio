@@ -619,21 +619,21 @@
   position: absolute;
   left: 44.6%;
   bottom: 5.9%;
-  border-left: 2px solid #fff;
-  padding: 2px 0 34px 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.85);
+  padding: 2px 0 24px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 .cz-cover-client-label {
   font-family: "Switzer", Arial, sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 300;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.65);
 }
 .cz-cover-client-name {
   font-family: "Switzer", Arial, sans-serif;
-  font-size: 19px;
+  font-size: 15px;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
@@ -1305,6 +1305,147 @@
   transform: translate(-50%, 0);
 }
 
+/* ===== Menú flotante del visor ===== */
+/* Píldora de vidrio con el mismo lenguaje del hamburguesa del sitio
+   (site.css .menu-wrapper): fija abajo a la derecha, aparece al scrollear
+   el header fuera de vista y despliega las acciones hacia arriba. */
+.cz-fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cz-fab.is-shown {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.cz-fab[hidden] {
+  display: none;
+}
+.cz-fab-button {
+  display: block;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+.cz-fab-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(12, 16, 21, 0.6);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.35),
+    inset 0 1px 1px rgba(255, 255, 255, 0.28);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cz-fab-button:active .cz-fab-wrapper {
+  transform: scale(0.9);
+}
+/* Heroicons menu <-> x-mark: mismo crossfade con contra-rotación del sitio. */
+.cz-fab-wrapper svg {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: opacity 0.3s ease, transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cz-fab-wrapper .cz-fab-icon-close {
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(-90deg) scale(0.5);
+}
+.cz-fab.open .cz-fab-icon-menu {
+  opacity: 0;
+  transform: translate(-50%, -50%) rotate(90deg) scale(0.5);
+}
+.cz-fab.open .cz-fab-icon-close {
+  opacity: 1;
+  transform: translate(-50%, -50%);
+}
+.cz-fab-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 12px);
+  min-width: 224px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: rgba(12, 16, 21, 0.92);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  transform-origin: bottom right;
+  opacity: 0;
+  transform: translateY(8px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cz-fab.open .cz-fab-menu {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+.cz-fab-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+}
+.cz-fab-item:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+.cz-fab-item svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--text-secondary);
+}
+.cz-fab-item:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+.cz-fab-item.is-approved,
+.cz-fab-item.is-approved svg {
+  color: #6fcf97;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cz-fab,
+  .cz-fab-wrapper,
+  .cz-fab-wrapper svg,
+  .cz-fab-menu {
+    transition: none;
+  }
+}
+
 /* ===== Comentarios del cliente ===== */
 /* La página entera scrollea (.cz-body es min-height, no height), así que sin
    sticky el panel se estira a lo alto del documento y la caja de escribir
@@ -1804,14 +1945,15 @@
     min-height: 0;
     padding: 40px 28px;
   }
-  /* Full-bleed sheets drop the letter proportion and hug their content. */
+  /* Hojas full-bleed: con aspect-ratio la altura queda fija en flujo de
+     bloque y el contenido desbordaría el azul, así que la proporción carta
+     se impone como min-height (ancho de hoja = 100vw − 12px de padding del
+     scroll por lado) y la hoja crece si el contenido pide más. */
   .cz-valor,
   .cz-thanks {
     aspect-ratio: auto;
+    min-height: calc((100vw - 24px) * 1056 / 816);
     padding: 40px 28px;
-  }
-  .cz-valor-foot {
-    margin-top: 40px;
   }
   .cz-valor-body {
     flex-direction: column;
@@ -1821,16 +1963,54 @@
     width: auto;
   }
   .cz-thanks-body {
-    margin: 48px 0;
+    /* Clears the corner mosaic: the margin scales with the sheet width just
+       like the art does; the base auto bottom margin keeps the foot pinned. */
+    margin-top: max(48px, 25%);
   }
   .cz-thanks-title {
-    font-size: 38px;
+    font-size: clamp(2rem, 8vw + 0.375rem, 3.25rem);
   }
+  /* Full mosaic, scaled down to a small corner accent. */
   .cz-thanks-art {
-    width: 42%;
+    width: 20%;
+  }
+  /* Respiro mínimo entre la firma y el pie cuando el contenido llena la
+     hoja; el margen auto del body sigue empujando el pie hasta abajo. */
+  .cz-thanks-foot {
+    margin-top: 40px;
   }
   .cz-doc-h1 {
-    font-size: 32px;
+    font-size: clamp(1.75rem, 5.5vw + 0.75rem, 2.5rem);
+  }
+  /* Texto de lectura en rem — escala con el ajuste de fuente del navegador —
+     y con mínimos legibles en pantalla chica (cuerpo ≥16px, secundario ≥14px).
+     En desktop el documento conserva su escala de "hoja carta" en px. */
+  .cz-doc-brief,
+  .cz-item-body,
+  .cz-fase,
+  .cz-inv-left,
+  .cz-inv-price {
+    font-size: 1rem;
+  }
+  .cz-fase-desc,
+  .cz-inv-detail,
+  .cz-valor-detalle,
+  .cz-tl-etapa,
+  .cz-thanks-signature-name,
+  .cz-timeline--page .cz-tl-detalle {
+    font-size: 0.9375rem;
+  }
+  .cz-terms-text,
+  .cz-doc-vigencia,
+  .cz-tl-detalle,
+  .cz-doc-foot,
+  .cz-valor-foot,
+  .cz-thanks-foot,
+  .cz-thanks-signature-title {
+    font-size: 0.875rem;
+  }
+  .cz-sec-title {
+    font-size: 0.8125rem;
   }
   .cz-fase {
     grid-template-columns: 1fr auto auto;
@@ -1848,6 +2028,9 @@
   .cz-terms {
     grid-template-columns: 1fr;
     gap: 20px;
+    /* Aire extra tras el total: el precio es el protagonista de esta página
+       y las condiciones arrancan claramente como bloque aparte. */
+    padding-top: 72px;
   }
   /* Timeline goes vertical: line down the left, milestones stacked. */
   .cz-timeline {
@@ -1904,10 +2087,10 @@
     break-after: page;
   }
   .cz-cover-client-label {
-    font-size: 12px;
+    font-size: 10px;
   }
   .cz-cover-client-name {
-    font-size: 18px;
+    font-size: 14px;
   }
   /* The closing sheets print as their own full-bleed blue pages (same
      margin-less named page as the cover; padding provides the margins). */

@@ -86,6 +86,47 @@ import "../../styles/cotizador.css";
 
     <div class="cz-toast" id="czToast" role="status"></div>
 
+    <!-- Menú flotante: aparece al scrollear cuando las acciones del header
+         salen de vista. Mismo lenguaje visual que el botón hamburguesa del
+         sitio (píldora de vidrio + heroicons menu/x). -->
+    <div class="cz-fab" id="czFab" data-noprint="1" hidden>
+      <div class="cz-fab-menu" id="fabMenu" role="menu">
+        <button type="button" class="cz-fab-item" id="fabApprove" role="menuitem">
+          <!-- Heroicons: Check -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+          </svg>
+          <span id="fabApproveLabel">Aprobar cotización</span>
+        </button>
+        <button type="button" class="cz-fab-item" id="fabPrint" role="menuitem">
+          <!-- Heroicons: Arrow Down Tray -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+          </svg>
+          <span id="fabPrintLabel">Descargar PDF</span>
+        </button>
+        <button type="button" class="cz-fab-item" id="fabShare" role="menuitem">
+          <!-- Heroicons: Link -->
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+          </svg>
+          <span id="fabShareLabel">Compartir link</span>
+        </button>
+      </div>
+      <button type="button" class="cz-fab-button" id="fabButton" aria-label="Menú de acciones" aria-expanded="false" aria-controls="fabMenu">
+        <span class="cz-fab-wrapper">
+          <!-- Heroicons: Menu -->
+          <svg class="cz-fab-icon-menu" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+          <!-- Heroicons: X Mark -->
+          <svg class="cz-fab-icon-close" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+          </svg>
+        </span>
+      </button>
+    </div>
+
     <script>
       import {
         labelsFor,
@@ -114,6 +155,11 @@ import "../../styles/cotizador.css";
       const btnApprove = $("btnApprove");
       const hdrTag = $("hdrTag");
       const panel = $("czComments");
+      const fab = $("czFab");
+      const fabButton = $("fabButton");
+      const fabApprove = $("fabApprove");
+      const fabPrint = $("fabPrint");
+      const fabShare = $("fabShare");
 
       // The client's name is remembered so a second comment doesn't ask again.
       const AUTOR_KEY = "cz-comment-autor";
@@ -130,6 +176,8 @@ import "../../styles/cotizador.css";
         btnPrint.hidden = true;
         btnApprove.hidden = true;
         panel.hidden = true;
+        fab.hidden = true;
+        closeFabMenu();
       }
 
       async function load() {
@@ -178,6 +226,18 @@ import "../../styles/cotizador.css";
         btnApprove.disabled = false;
         btnApprove.textContent = t.aprobar;
         btnApprove.hidden = false;
+
+        // Menú flotante: etiquetas al idioma de la cotización y visible ya
+        // con documento cargado (aparece solo al scrollear — ver initFab).
+        $("fabApproveLabel").textContent = t.aprobar;
+        $("fabPrintLabel").textContent = t.descargar;
+        $("fabShareLabel").textContent = t.compartir;
+        fabApprove.disabled = false;
+        fabApprove.classList.remove("is-approved");
+        fabButton.setAttribute("aria-label", t.menuAcciones);
+        fab.hidden = false;
+        initFab();
+
         let stored = null;
         try {
           stored = localStorage.getItem(approvedKey(data));
@@ -380,6 +440,10 @@ import "../../styles/cotizador.css";
         // Icono de heroicons + etiqueta (texto por nodo, no innerHTML).
         btnApprove.innerHTML = CHECK_SVG;
         btnApprove.appendChild(document.createTextNode(labelsFor(data.lang).aprobada));
+        // El item del menú flotante refleja el mismo estado.
+        fabApprove.disabled = true;
+        fabApprove.classList.add("is-approved");
+        $("fabApproveLabel").textContent = labelsFor(data.lang).aprobada;
         try {
           localStorage.setItem(approvedKey(data), "1");
         } catch (err) {}
@@ -389,17 +453,22 @@ import "../../styles/cotizador.css";
         btnApprove.disabled = false;
         btnApprove.classList.remove("is-approved", "is-pop");
         btnApprove.textContent = labelsFor(data.lang).aprobar;
+        fabApprove.disabled = false;
+        fabApprove.classList.remove("is-approved");
+        $("fabApproveLabel").textContent = labelsFor(data.lang).aprobar;
         try {
           localStorage.removeItem(approvedKey(data));
         } catch (err) {}
       }
 
-      btnApprove.addEventListener("click", async () => {
+      // Un solo flujo de aprobación para el botón del header y el del menú
+      // flotante: `origin` decide desde dónde explota el confeti.
+      async function approve(origin: any) {
         if (!current || btnApprove.disabled) return;
         const t = labelsFor(current.lang);
         markApproved(current);
         btnApprove.classList.add("is-pop");
-        confettiBurst(btnApprove);
+        confettiBurst(origin);
         toast(t.aprobadaToast);
 
         // Avisar a No Flag Brand vía el hilo de comentarios. Si el endpoint
@@ -416,7 +485,9 @@ import "../../styles/cotizador.css";
           });
           paint(await fetchComentarios(current.id));
         } catch (err) {}
-      });
+      }
+
+      btnApprove.addEventListener("click", () => approve(btnApprove));
 
       // Confeti casero sobre un canvas de una sola vida: explota desde el
       // botón, cae con gravedad y el canvas se quita solo al terminar.
@@ -486,6 +557,91 @@ import "../../styles/cotizador.css";
           else canvas.remove();
         }
         requestAnimationFrame(frame);
+      }
+
+      /* ---------- Menú flotante ---------- */
+      // Píldora hamburguesa (como la del sitio) fija abajo a la derecha:
+      // aparece cuando el header con las acciones sale del viewport y
+      // despliega Aprobar / Descargar PDF / Compartir link.
+      let fabReady = false;
+
+      function closeFabMenu() {
+        fab.classList.remove("open");
+        fabButton.setAttribute("aria-expanded", "false");
+      }
+
+      function initFab() {
+        if (fabReady) return;
+        fabReady = true;
+
+        const header = document.querySelector(".cz-header");
+        if (header && typeof IntersectionObserver !== "undefined") {
+          new IntersectionObserver(([entry]: any[]) => {
+            fab.classList.toggle("is-shown", !entry.isIntersecting);
+            if (entry.isIntersecting) closeFabMenu();
+          }).observe(header);
+        } else {
+          // Sin IO: umbral fijo aproximado a la altura del header.
+          const onScroll = () => fab.classList.toggle("is-shown", window.scrollY > 160);
+          window.addEventListener("scroll", onScroll, { passive: true });
+          onScroll();
+        }
+
+        fabButton.addEventListener("click", () => {
+          const open = fab.classList.toggle("open");
+          fabButton.setAttribute("aria-expanded", String(open));
+        });
+        document.addEventListener("click", (e: any) => {
+          if (!fab.contains(e.target)) closeFabMenu();
+        });
+        document.addEventListener("keydown", (e: any) => {
+          if (e.key === "Escape") closeFabMenu();
+        });
+
+        fabPrint.addEventListener("click", () => {
+          closeFabMenu();
+          window.print();
+        });
+        fabApprove.addEventListener("click", () => {
+          if (fabApprove.disabled) return;
+          closeFabMenu();
+          approve(fabButton);
+        });
+        fabShare.addEventListener("click", async () => {
+          if (!current) return;
+          closeFabMenu();
+          const t = labelsFor(current.lang);
+          try {
+            await copyLink(location.href);
+            toast(t.linkCopiado);
+          } catch (err) {
+            // Sin clipboard (webview viejo/permiso negado): mostrar el link
+            // para copiarlo a mano.
+            window.prompt(t.compartir, location.href);
+          }
+        });
+      }
+
+      // Clipboard API en contexto seguro; si no, textarea + execCommand.
+      function copyLink(url: string) {
+        if (navigator.clipboard && window.isSecureContext) {
+          return navigator.clipboard.writeText(url);
+        }
+        return new Promise<void>((resolve, reject) => {
+          const ta = document.createElement("textarea");
+          ta.value = url;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          try {
+            document.execCommand("copy") ? resolve() : reject(new Error("copy failed"));
+          } catch (e) {
+            reject(e);
+          } finally {
+            ta.remove();
+          }
+        });
       }
 
       btnPrint.addEventListener("click", () => window.print());
