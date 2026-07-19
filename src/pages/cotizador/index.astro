@@ -113,9 +113,21 @@ import "../../styles/cotizador.css";
           <div class="cz-group cz-sidebar-actions">
             <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
             <button type="button" class="cz-btn ghost" id="btnPrint">Descargar PDF</button>
-            <!-- Aparece solo cuando el endpoint de comentarios responde: la
-                 aprobación vive en ese hilo. Aprobada → "Quitar aprobación". -->
-            <button type="button" class="cz-btn ghost" id="btnAprobar" hidden>Aprobar cotización</button>
+          </div>
+
+          <!-- Aprobación: su propia fila para que se lea completa. Aparece solo
+               cuando el endpoint de comentarios responde (la aprobación vive en
+               ese hilo). Sin aprobar → botón "Aprobar cotización"; aprobada →
+               sello verde evidente + acción para eliminar la aprobación. -->
+          <div class="cz-group cz-aprobacion-group" id="aprobacionGroup" hidden>
+            <button type="button" class="cz-btn cz-approve-cta" id="btnAprobar">Aprobar cotización</button>
+            <div class="cz-aprobada-sello" id="aprobadaSello" hidden>
+              <span class="cz-aprobada-tag">
+                <svg class="cz-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                <span id="aprobadaTagText">Aprobada</span>
+              </span>
+              <button type="button" class="cz-aprobada-quitar" id="btnQuitarAprobacion">Eliminar aprobación</button>
+            </div>
           </div>
         </aside>
 
@@ -331,6 +343,20 @@ import "../../styles/cotizador.css";
       let commentsOpen = false;
       // Estado de aprobación de la cotización abierta (según su hilo).
       let aprobada = false;
+      // Estado de aprobación por cotización (id → bool) para pintarlo también
+      // en el drawer sin re-consultar en cada render.
+      const aprobadasMap = new Map<string, boolean>();
+
+      // Refleja el estado de aprobación de la cotización abierta en el sidebar:
+      // sin aprobar muestra el botón; aprobada, el sello verde evidente.
+      function renderAprobacion() {
+        const t = labelsFor(data.lang);
+        $("btnAprobar").textContent = t.aprobar;
+        $("btnAprobar").hidden = aprobada;
+        $("aprobadaSello").hidden = !aprobada;
+        $("aprobadaTagText").textContent = t.aprobada;
+        $("btnQuitarAprobacion").textContent = t.eliminarAprobacion;
+      }
 
       async function loadComments() {
         const t = labelsFor(data.lang);
@@ -340,22 +366,21 @@ import "../../styles/cotizador.css";
         try {
           comentarios = await fetchComentarios(quoteId);
         } catch (e) {
-          // Endpoint apagado o sin configurar: los botones no aparecen.
+          // Endpoint apagado o sin configurar: los controles no aparecen.
           if (token !== commentsToken) return;
           $("btnComments").hidden = true;
-          $("btnAprobar").hidden = true;
+          $("aprobacionGroup").hidden = true;
           $("czComments").hidden = true;
           commentsOpen = false;
           return;
         }
         if (token !== commentsToken) return;
 
-        // La aprobación vive en el hilo: presente → aprobada. El botón del
-        // sidebar se vuelve la reversa ("Quitar aprobación") cuando ya lo está.
+        // La aprobación vive en el hilo: presente → aprobada.
         aprobada = comentarios.some(esAprobacion);
-        $("btnAprobar").hidden = false;
-        $("btnAprobar").textContent = aprobada ? t.quitarAprobacion : t.aprobar;
-        $("btnAprobar").classList.toggle("is-approved", aprobada);
+        aprobadasMap.set(quoteId, aprobada);
+        $("aprobacionGroup").hidden = false;
+        renderAprobacion();
 
         $("btnComments").hidden = false;
         $("btnComments").textContent = `${t.comentarios} (${comentarios.length})`;
@@ -379,38 +404,60 @@ import "../../styles/cotizador.css";
 
       /* ---------- Aprobación desde el admin ---------- */
       // Aprobar publica el mismo comentario marcado que usa el visor del
-      // cliente; quitar la aprobación lo borra del hilo (con la clave) y el
+      // cliente; eliminar la aprobación lo borra del hilo (con la clave) y el
       // visor revierte su estado en la próxima carga.
       let aprobacionBusy = false;
-      $("btnAprobar").addEventListener("click", async () => {
+
+      // Cambia el estado de aprobación de una cotización cualquiera (por id) y
+      // sincroniza sidebar, mapa y drawer. Lo usan el sidebar y el drawer.
+      async function setAprobacion(quoteId: string, meta: any, aprobar: boolean) {
         if (aprobacionBusy) return;
         const t = labelsFor(data.lang);
         aprobacionBusy = true;
-        $("btnAprobar").disabled = true;
         try {
-          if (aprobada) {
-            await deleteAprobacion(data.id, clave);
-            toast(t.aprobacionQuitada);
-          } else {
+          if (aprobar) {
             await postComentario({
-              quote: data.id,
+              quote: quoteId,
               autor: "No Flag Brand",
               texto: t.aprobadaComentario,
-              numero: data.meta.numero || "",
-              cliente: [data.meta.nombre, data.meta.empresa].filter(Boolean).join(" · "),
+              numero: (meta && meta.numero) || "",
+              cliente: [meta && meta.nombre, meta && meta.empresa].filter(Boolean).join(" · "),
             });
             toast(t.aprobadaToast);
+          } else {
+            await deleteAprobacion(quoteId, clave);
+            toast(t.aprobacionQuitada);
           }
-          await loadComments();
+          aprobadasMap.set(quoteId, aprobar);
+          if (quoteId === data.id) {
+            aprobada = aprobar;
+            renderAprobacion();
+          }
+          if (!drawer.hidden) renderList();
         } catch (err) {
           toast(t.errAprobacion);
         } finally {
           aprobacionBusy = false;
-          $("btnAprobar").disabled = false;
         }
+      }
+
+      $("btnAprobar").addEventListener("click", async () => {
+        $("btnAprobar").disabled = true;
+        await setAprobacion(data.id, data.meta, true);
+        $("btnAprobar").disabled = false;
+      });
+      $("btnQuitarAprobacion").addEventListener("click", async () => {
+        $("btnQuitarAprobacion").disabled = true;
+        await setAprobacion(data.id, data.meta, false);
+        $("btnQuitarAprobacion").disabled = false;
       });
 
       /* ---------- Saved quotes drawer ---------- */
+      // Heroicons "check" (mismo icono que el resto del sitio) para el badge
+      // de aprobada en el drawer y el sello del sidebar.
+      const CHECK_SVG =
+        '<svg class="cz-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>';
+
       function renderList() {
         const t = labelsFor(data.lang);
         const list = $("drawerList");
@@ -424,19 +471,34 @@ import "../../styles/cotizador.css";
         }
         const sorted = [...quotes].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
         for (const q of sorted) {
+          const esAprobada = aprobadasMap.get(q.id) === true;
           const item = document.createElement("div");
-          item.className = "cz-quote-item" + (q.id === data.id ? " is-active" : "");
+          item.className =
+            "cz-quote-item" +
+            (q.id === data.id ? " is-active" : "") +
+            (esAprobada ? " is-approved" : "");
 
           const open = document.createElement("button");
           open.type = "button";
           open.className = "cz-quote-open";
           const line1 = document.createElement("div");
           line1.className = "cz-quote-line1";
+          // Número + badge de aprobada (si aplica) agrupados a la izquierda.
+          const numWrap = document.createElement("div");
+          numWrap.className = "cz-quote-num-wrap";
           const num = document.createElement("span");
           num.textContent = q.meta.numero || "—";
+          numWrap.appendChild(num);
+          if (esAprobada) {
+            const badge = document.createElement("span");
+            badge.className = "cz-quote-aprobada";
+            badge.innerHTML = CHECK_SVG;
+            badge.appendChild(document.createTextNode(t.aprobada));
+            numWrap.appendChild(badge);
+          }
           const total = document.createElement("span");
           total.textContent = fmtMoney(totalOf(q), q.moneda, q.lang);
-          line1.append(num, total);
+          line1.append(numWrap, total);
           const line2 = document.createElement("div");
           line2.className = "cz-quote-line2";
           line2.textContent = q.q.proyecto || t.sinTitulo;
@@ -505,6 +567,20 @@ import "../../styles/cotizador.css";
           });
           actions.append(dup, del);
 
+          // Quitar aprobación directo desde el drawer (solo si está aprobada).
+          if (esAprobada) {
+            const unap = document.createElement("button");
+            unap.type = "button";
+            unap.className = "cz-quote-unap";
+            unap.textContent = t.quitarAprobacion;
+            unap.addEventListener("click", async () => {
+              unap.disabled = true;
+              await setAprobacion(q.id, q.meta, false);
+              if (!drawer.hidden) renderList();
+            });
+            actions.append(unap);
+          }
+
           item.append(open, actions);
           list.appendChild(item);
         }
@@ -518,10 +594,29 @@ import "../../styles/cotizador.css";
 
       const drawer = $("czDrawer");
       const backdrop = $("drawerBackdrop");
-      function openDrawer() {
+
+      // Consulta el estado de aprobación de cada cotización guardada para
+      // pintarlo en el drawer. Best-effort en paralelo: las que fallen (o si
+      // el endpoint está apagado) simplemente no muestran badge.
+      async function refreshAprobadas() {
+        await Promise.all(
+          quotes.map(async (q) => {
+            try {
+              const c = await fetchComentarios(q.id);
+              aprobadasMap.set(q.id, c.some(esAprobacion));
+            } catch (e) {}
+          })
+        );
+      }
+
+      async function openDrawer() {
         renderList();
         drawer.hidden = false;
         backdrop.hidden = false;
+        // Pinta ya con lo que haya en el mapa; al volver el fetch, re-pinta con
+        // los badges actualizados (si el drawer sigue abierto).
+        await refreshAprobadas();
+        if (!drawer.hidden) renderList();
       }
       function closeDrawer() {
         drawer.hidden = true;

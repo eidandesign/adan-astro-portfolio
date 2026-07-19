@@ -1332,23 +1332,126 @@
 }
 
 /* ===== Aprobación (visor) ===== */
-/* Aprobada: el botón deja de ser CTA y queda como sello verde de confirmación. */
+/* CTA "Aprobar cotización" en verde accesible (blanco sobre #157f43 = 5.06:1,
+   WCAG AA): mismo color en el visor (.cz-approve) y en el cotizador
+   (.cz-approve-cta). Verde = acción de aprobar, distinto del rojo de marca. */
+.cz-approve,
+.cz-approve-cta {
+  background-color: #157f43;
+  border-color: #157f43;
+  color: #fff;
+}
+.cz-approve:hover,
+.cz-approve-cta:hover {
+  background-color: #0f6836;
+  border-color: #0f6836;
+  color: #fff;
+}
+/* Aprobada: el botón deja de ser CTA y queda como sello verde de confirmación,
+   con el icono de check (heroicons) alineado junto a la etiqueta. */
 .cz-approve.is-approved {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background-color: transparent;
   border-color: #3e9d6b;
   color: #6fcf97;
   cursor: default;
   opacity: 1;
 }
-/* En el cotizador, el botón aprobada sigue clicable ("Quitar aprobación"):
-   verde como estado, sin apagar el cursor. */
-.cz-btn.ghost.is-approved {
-  border-color: #3e9d6b;
-  color: #6fcf97;
+.cz-approve .cz-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
 }
-.cz-btn.ghost.is-approved:hover {
-  border-color: #6fcf97;
+/* ===== Aprobación (cotizador / admin) ===== */
+/* Sello evidente cuando la cotización ya está aprobada: caja verde con el
+   check y la etiqueta, más la acción para eliminar la aprobación al lado. */
+.cz-aprobada-sello {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #3e9d6b;
+  border-radius: 8px;
+  background-color: rgba(111, 207, 151, 0.12);
+}
+.cz-aprobada-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   color: #6fcf97;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.cz-aprobada-tag .cz-check {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+.cz-aprobada-quitar {
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: "Switzer", Arial, sans-serif;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+.cz-aprobada-quitar:hover {
+  color: var(--primary);
+}
+
+/* Badge de aprobada dentro de cada cotización del drawer + borde verde
+   completo. Va después de .is-active para que, si además está abierta, gane el
+   verde de aprobada (el estado que interesa resaltar). */
+.cz-quote-item.is-approved {
+  border-color: #3e9d6b;
+}
+.cz-quote-num-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.cz-quote-aprobada {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px 1px 6px;
+  border: 1px solid #3e9d6b;
+  border-radius: 999px;
+  color: #6fcf97;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.cz-quote-aprobada .cz-check {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+/* La acción de quitar aprobación resalta en verde entre Duplicar/Eliminar. */
+.cz-quote-unap {
+  color: #6fcf97 !important;
+}
+.cz-quote-unap:hover {
+  color: var(--primary) !important;
+}
+/* El atributo `hidden` debe ganar sobre los display:flex/inline-flex de arriba
+   (igual que .cz-gate[hidden]); si no, el sello o el grupo se quedan visibles
+   aunque el JS los oculte. Va al final para superar en orden a esas reglas. */
+.cz-aprobacion-group[hidden],
+.cz-aprobada-sello[hidden],
+.cz-approve[hidden] {
+  display: none;
 }
 /* Pequeño brinco al aprobar (solo al hacer clic, no al restaurar el estado). */
 .cz-approve.is-pop {
