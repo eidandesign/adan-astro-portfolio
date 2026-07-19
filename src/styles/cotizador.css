@@ -1340,6 +1340,16 @@
   cursor: default;
   opacity: 1;
 }
+/* En el cotizador, el botón aprobada sigue clicable ("Quitar aprobación"):
+   verde como estado, sin apagar el cursor. */
+.cz-btn.ghost.is-approved {
+  border-color: #3e9d6b;
+  color: #6fcf97;
+}
+.cz-btn.ghost.is-approved:hover {
+  border-color: #6fcf97;
+  color: #6fcf97;
+}
 /* Pequeño brinco al aprobar (solo al hacer clic, no al restaurar el estado). */
 .cz-approve.is-pop {
   animation: cz-approve-pop 0.5s ease;

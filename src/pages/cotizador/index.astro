@@ -113,6 +113,9 @@ import "../../styles/cotizador.css";
           <div class="cz-group cz-sidebar-actions">
             <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
             <button type="button" class="cz-btn ghost" id="btnPrint">Descargar PDF</button>
+            <!-- Aparece solo cuando el endpoint de comentarios responde: la
+                 aprobación vive en ese hilo. Aprobada → "Quitar aprobación". -->
+            <button type="button" class="cz-btn ghost" id="btnAprobar" hidden>Aprobar cotización</button>
           </div>
         </aside>
 
@@ -154,7 +157,13 @@ import "../../styles/cotizador.css";
         fmtMoney,
         totalOf,
       } from "../../lib/cotizador.js";
-      import { fetchComentarios, renderComentarios } from "../../lib/cotizador-comentarios.js";
+      import {
+        fetchComentarios,
+        postComentario,
+        renderComentarios,
+        esAprobacion,
+        deleteAprobacion,
+      } from "../../lib/cotizador-comentarios.js";
       import { saveQuoteRemote, deleteQuoteRemote } from "../../lib/cotizador-quotes-store.js";
 
       // To change the access key: run in any browser console —
@@ -320,6 +329,8 @@ import "../../styles/cotizador.css";
       // las respuestas que ya no corresponden a la que está abierta.
       let commentsToken = 0;
       let commentsOpen = false;
+      // Estado de aprobación de la cotización abierta (según su hilo).
+      let aprobada = false;
 
       async function loadComments() {
         const t = labelsFor(data.lang);
@@ -329,14 +340,22 @@ import "../../styles/cotizador.css";
         try {
           comentarios = await fetchComentarios(quoteId);
         } catch (e) {
-          // Endpoint apagado o sin configurar: el botón no aparece.
+          // Endpoint apagado o sin configurar: los botones no aparecen.
           if (token !== commentsToken) return;
           $("btnComments").hidden = true;
+          $("btnAprobar").hidden = true;
           $("czComments").hidden = true;
           commentsOpen = false;
           return;
         }
         if (token !== commentsToken) return;
+
+        // La aprobación vive en el hilo: presente → aprobada. El botón del
+        // sidebar se vuelve la reversa ("Quitar aprobación") cuando ya lo está.
+        aprobada = comentarios.some(esAprobacion);
+        $("btnAprobar").hidden = false;
+        $("btnAprobar").textContent = aprobada ? t.quitarAprobacion : t.aprobar;
+        $("btnAprobar").classList.toggle("is-approved", aprobada);
 
         $("btnComments").hidden = false;
         $("btnComments").textContent = `${t.comentarios} (${comentarios.length})`;
@@ -356,6 +375,39 @@ import "../../styles/cotizador.css";
       $("btnCommentsClose").addEventListener("click", () => {
         commentsOpen = false;
         $("czComments").hidden = true;
+      });
+
+      /* ---------- Aprobación desde el admin ---------- */
+      // Aprobar publica el mismo comentario marcado que usa el visor del
+      // cliente; quitar la aprobación lo borra del hilo (con la clave) y el
+      // visor revierte su estado en la próxima carga.
+      let aprobacionBusy = false;
+      $("btnAprobar").addEventListener("click", async () => {
+        if (aprobacionBusy) return;
+        const t = labelsFor(data.lang);
+        aprobacionBusy = true;
+        $("btnAprobar").disabled = true;
+        try {
+          if (aprobada) {
+            await deleteAprobacion(data.id, clave);
+            toast(t.aprobacionQuitada);
+          } else {
+            await postComentario({
+              quote: data.id,
+              autor: "No Flag Brand",
+              texto: t.aprobadaComentario,
+              numero: data.meta.numero || "",
+              cliente: [data.meta.nombre, data.meta.empresa].filter(Boolean).join(" · "),
+            });
+            toast(t.aprobadaToast);
+          }
+          await loadComments();
+        } catch (err) {
+          toast(t.errAprobacion);
+        } finally {
+          aprobacionBusy = false;
+          $("btnAprobar").disabled = false;
+        }
       });
 
       /* ---------- Saved quotes drawer ---------- */

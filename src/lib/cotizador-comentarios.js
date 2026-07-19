@@ -2,6 +2,8 @@
 // render del hilo. Lo usan el visor (/cotizador/ver, donde el cliente escribe)
 // y el cotizador (/cotizador, donde Adán los lee).
 
+import { LABELS } from "./cotizador.js";
+
 // El endpoint responde 501 cuando faltan las env vars de Supabase. Se
 // distingue del resto de errores para poder esconder el panel entero en vez
 // de mostrarle un error al cliente por algo que no puede resolver.
@@ -26,6 +28,30 @@ export async function postComentario({ quote, autor, texto, numero, cliente }) {
   if (!res.ok) throw new Error("post-failed");
   const json = await res.json();
   return json.comentario;
+}
+
+// La aprobación viaja como comentario con texto fijo por idioma
+// (LABELS.aprobadaComentario): su presencia en el hilo ES el estado de
+// aprobada, compartido entre el visor del cliente y el cotizador.
+export function esAprobacion(c) {
+  return (
+    c &&
+    typeof c.texto === "string" &&
+    (c.texto.startsWith(LABELS.es.aprobadaComentario) ||
+      c.texto.startsWith(LABELS.en.aprobadaComentario))
+  );
+}
+
+// Borra los comentarios de aprobación del hilo (la cotización vuelve a "no
+// aprobada"). Solo desde el cotizador: el endpoint verifica la clave.
+export async function deleteAprobacion(quote, clave) {
+  const res = await fetch("/api/comentarios", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ quote, clave }),
+  });
+  if (res.status === 501 || res.status === 404) throw new ComentariosOff();
+  if (!res.ok) throw new Error("delete-failed");
 }
 
 export function fmtFecha(iso, lang = "es") {

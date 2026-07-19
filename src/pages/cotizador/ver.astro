@@ -88,7 +88,6 @@ import "../../styles/cotizador.css";
 
     <script>
       import {
-        LABELS,
         labelsFor,
         decodeQuote,
         renderDoc,
@@ -100,6 +99,7 @@ import "../../styles/cotizador.css";
         fetchComentarios,
         postComentario,
         renderComentarios,
+        esAprobacion,
       } from "../../lib/cotizador-comentarios.js";
       import { fetchQuoteRemote } from "../../lib/cotizador-quotes-store.js";
 
@@ -310,9 +310,11 @@ import "../../styles/cotizador.css";
           const comentarios = await fetchComentarios(data.id);
           paint(comentarios);
           panel.hidden = false;
-          // Una aprobación hecha desde otro dispositivo viaja como comentario
-          // marcado: si está en el hilo, el botón ya llega en "Aprobada ✓".
+          // El hilo es la fuente de verdad de la aprobación: una hecha en
+          // otro dispositivo llega como comentario marcado, y si el admin la
+          // quitó desde el cotizador, aquí se revierte el localStorage.
           if (comentarios.some(esAprobacion)) markApproved(data);
+          else unmarkApproved(data);
         } catch (e) {
           // Comentarios apagados o caídos: el cliente ve la cotización
           // completa igual, que es lo que vino a hacer.
@@ -366,22 +368,21 @@ import "../../styles/cotizador.css";
       });
 
       /* ---------- Aprobación ---------- */
-      // El texto del comentario de aprobación es fijo por idioma: sirve de
-      // marca para reconocer una cotización ya aprobada al volver a abrirla.
-      function esAprobacion(c: any) {
-        return (
-          typeof c.texto === "string" &&
-          (c.texto.startsWith(LABELS.es.aprobadaComentario) ||
-            c.texto.startsWith(LABELS.en.aprobadaComentario))
-        );
-      }
-
       function markApproved(data: any) {
         btnApprove.disabled = true;
         btnApprove.classList.add("is-approved");
         btnApprove.textContent = labelsFor(data.lang).aprobada;
         try {
           localStorage.setItem(approvedKey(data), "1");
+        } catch (err) {}
+      }
+
+      function unmarkApproved(data: any) {
+        btnApprove.disabled = false;
+        btnApprove.classList.remove("is-approved", "is-pop");
+        btnApprove.textContent = labelsFor(data.lang).aprobar;
+        try {
+          localStorage.removeItem(approvedKey(data));
         } catch (err) {}
       }
 

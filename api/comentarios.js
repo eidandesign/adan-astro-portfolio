@@ -4,15 +4,20 @@
 // único que se guarda aquí es el hilo de comentarios, amarrado al `id` de la
 // cotización (genId() en src/lib/cotizador.js).
 //
-//   GET  /api/comentarios?quote=<id>   → { comentarios: [...] }
-//   POST /api/comentarios              → { comentario } + aviso por WhatsApp
+//   GET    /api/comentarios?quote=<id>   → { comentarios: [...] }
+//   POST   /api/comentarios              → { comentario } + aviso por WhatsApp
+//   DELETE /api/comentarios              → borra los comentarios de aprobación
+//                                          (requiere la clave del cotizador;
+//                                          regresa la cotización a "no aprobada")
 //
 // Quien tenga el link puede leer y escribir comentarios de esa cotización:
-// el link es la credencial, igual que para ver la cotización misma.
+// el link es la credencial, igual que para ver la cotización misma. Quitar
+// una aprobación sí pide la clave: solo el admin puede revertir ese estado.
 //
 // Setup (Vercel → Project → Settings → Environment Variables):
 //   SUPABASE_URL              = https://xxxx.supabase.co
 //   SUPABASE_SERVICE_ROLE_KEY = service_role key (Supabase → Settings → API)
+//   COTIZADOR_KEY_HASH        = sha256 hex de la clave del cotizador (misma que api/cotizar.js)
 //   CALLMEBOT_PHONE           = +52155… (número con lada, el que registraste)
 //   CALLMEBOT_APIKEY          = la key que te dio CallMeBot por WhatsApp
 // Tabla: correr supabase/cotizador-comentarios.sql en el SQL Editor.
@@ -20,12 +25,18 @@
 // simplemente no aparece. Sin las de CallMeBot los comentarios se guardan
 // igual, solo no llega el aviso.
 
+import { createHash, timingSafeEqual } from "node:crypto";
+
 const MAX_TEXTO = 2000;
 const MAX_AUTOR = 80;
 const MAX_META = 200;
 // Tope por cotización: sin esto un link filtrado se puede llenar de basura.
 const MAX_POR_COTIZACION = 200;
 const TABLE = "cotizador_comentarios";
+// Prefijos del comentario de aprobación (LABELS.aprobadaComentario en
+// src/lib/cotizador.js, ambos idiomas). Las funciones de api/ no importan de
+// src/, así que van duplicados; si cambian allá, cambiarlos aquí también.
+const APROBACION_MARKS = ["✅ Cotización aprobada", "✅ Quote approved"];
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -46,6 +57,21 @@ async function sb(cfg, query, init = {}) {
   });
   if (!res.ok) throw new Error(`supabase-${res.status}`);
   return res;
+}
+
+// Misma verificación que api/quotes.js: la clave del cotizador viaja en el
+// body y se compara por hash contra COTIZADOR_KEY_HASH.
+function checkClave(clave) {
+  const expectedHash = process.env.COTIZADOR_KEY_HASH;
+  if (!expectedHash) return false;
+  const claveHash = createHash("sha256").update(String(clave || "")).digest();
+  let expected;
+  try {
+    expected = Buffer.from(expectedHash, "hex");
+  } catch (e) {
+    expected = Buffer.alloc(0);
+  }
+  return expected.length === claveHash.length && timingSafeEqual(claveHash, expected);
 }
 
 // El aviso a WhatsApp nunca debe tumbar el guardado: si CallMeBot falla, el
@@ -105,6 +131,39 @@ export default async function handler(req, res) {
       );
       res.setHeader("Cache-Control", "no-store");
       res.status(200).json({ comentarios: await r.json() });
+    } catch (e) {
+      res.status(502).json({ error: "upstream" });
+    }
+    return;
+  }
+
+  if (req.method === "DELETE") {
+    const body = req.body || {};
+    if (!checkClave(body.clave)) {
+      res.status(401).json({ error: "unauthorized" });
+      return;
+    }
+    const quote = String(body.quote || "").slice(0, 100);
+    if (!quote) {
+      res.status(400).json({ error: "missing-quote" });
+      return;
+    }
+    try {
+      // Solo se borran los comentarios de aprobación — el hilo del cliente
+      // queda intacto. Filtrado aquí (no en SQL) para no pelear con el
+      // encoding de los prefijos en PostgREST.
+      const r = await sb(
+        cfg,
+        `?quote_id=eq.${encodeURIComponent(quote)}&select=id,texto&limit=${MAX_POR_COTIZACION}`
+      );
+      const rows = await r.json();
+      const ids = rows
+        .filter((c) => APROBACION_MARKS.some((m) => String(c.texto || "").startsWith(m)))
+        .map((c) => c.id);
+      if (ids.length) {
+        await sb(cfg, `?id=in.(${ids.join(",")})`, { method: "DELETE" });
+      }
+      res.status(200).json({ eliminados: ids.length });
     } catch (e) {
       res.status(502).json({ error: "upstream" });
     }

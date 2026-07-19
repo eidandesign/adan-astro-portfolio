@@ -63,6 +63,9 @@ export const LABELS = {
     aprobada: "Aprobada ✓",
     aprobadaToast: "¡Cotización aprobada! 🎉",
     aprobadaComentario: "✅ Cotización aprobada",
+    quitarAprobacion: "Quitar aprobación",
+    aprobacionQuitada: "Aprobación quitada — vuelve a 'no aprobada'",
+    errAprobacion: "No se pudo actualizar la aprobación. Intenta de nuevo.",
     // Comments
     comentarios: "Comentarios",
     comentariosHint:
@@ -140,6 +143,9 @@ export const LABELS = {
     aprobada: "Approved ✓",
     aprobadaToast: "Quote approved! 🎉",
     aprobadaComentario: "✅ Quote approved",
+    quitarAprobacion: "Remove approval",
+    aprobacionQuitada: "Approval removed — back to 'not approved'",
+    errAprobacion: "Couldn't update the approval. Try again.",
     comentarios: "Comments",
     comentariosHint:
       "Questions, tweaks, anything you'd like changed? Write it here and it goes straight to No Flag Brand.",
