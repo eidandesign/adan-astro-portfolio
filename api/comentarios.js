@@ -37,6 +37,9 @@ const TABLE = "cotizador_comentarios";
 // src/lib/cotizador.js, ambos idiomas). Las funciones de api/ no importan de
 // src/, así que van duplicados; si cambian allá, cambiarlos aquí también.
 const APROBACION_MARKS = ["✅ Cotización aprobada", "✅ Quote approved"];
+// Prefijos del comentario de rechazo (LABELS.rechazadaComentario, ambos
+// idiomas). Mismo trato que las de aprobación: si cambian en src/, aquí también.
+const RECHAZO_MARKS = ["🚫 Cotización rechazada", "🚫 Quote declined"];
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -148,17 +151,26 @@ export default async function handler(req, res) {
       res.status(400).json({ error: "missing-quote" });
       return;
     }
+    // `tipo` decide qué comentarios de estado se borran; default = aprobación
+    // (compatible con las llamadas previas). El hilo del cliente nunca se toca.
+    const tipo = String(body.tipo || "aprobacion");
+    const marks =
+      tipo === "rechazo"
+        ? RECHAZO_MARKS
+        : tipo === "todos"
+          ? [...APROBACION_MARKS, ...RECHAZO_MARKS]
+          : APROBACION_MARKS;
     try {
-      // Solo se borran los comentarios de aprobación — el hilo del cliente
-      // queda intacto. Filtrado aquí (no en SQL) para no pelear con el
-      // encoding de los prefijos en PostgREST.
+      // Solo se borran los comentarios de estado — el hilo del cliente queda
+      // intacto. Filtrado aquí (no en SQL) para no pelear con el encoding de
+      // los prefijos en PostgREST.
       const r = await sb(
         cfg,
         `?quote_id=eq.${encodeURIComponent(quote)}&select=id,texto&limit=${MAX_POR_COTIZACION}`
       );
       const rows = await r.json();
       const ids = rows
-        .filter((c) => APROBACION_MARKS.some((m) => String(c.texto || "").startsWith(m)))
+        .filter((c) => marks.some((m) => String(c.texto || "").startsWith(m)))
         .map((c) => c.id);
       if (ids.length) {
         await sb(cfg, `?id=in.(${ids.join(",")})`, { method: "DELETE" });

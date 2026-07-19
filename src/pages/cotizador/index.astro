@@ -67,6 +67,13 @@ import "../../styles/cotizador.css";
           <span class="cz-label" id="drawerTitle">Cotizaciones</span>
           <button type="button" class="cz-drawer-close" id="btnDrawerClose" aria-label="Cerrar">×</button>
         </div>
+        <!-- Filtros por estado. `aria-pressed` marca la pill activa; el JS
+             re-pinta la lista al cambiar. -->
+        <div class="cz-filtros" id="drawerFiltros" role="group" aria-label="Filtrar cotizaciones">
+          <button type="button" class="cz-pill is-active" data-filtro="todas" aria-pressed="true">Todas</button>
+          <button type="button" class="cz-pill" data-filtro="aprobadas" aria-pressed="false">Aprobadas</button>
+          <button type="button" class="cz-pill" data-filtro="rechazadas" aria-pressed="false">Rechazadas</button>
+        </div>
         <div class="cz-drawer-list" id="drawerList"></div>
         <button type="button" class="cz-btn" id="btnDrawerNew">Nueva cotización</button>
       </aside>
@@ -105,12 +112,19 @@ import "../../styles/cotizador.css";
               <input type="password" class="cz-input" id="inApiKey" placeholder="Groq API key (gsk_…)" autocomplete="off" />
               <div class="cz-hint" id="hintApi">Se guarda solo en este navegador. Créala gratis en console.groq.com/keys</div>
             </div>
-            <button type="button" class="cz-btn" id="btnGenerate">Generar propuesta con IA</button>
+            <!-- Antes de generar: solo "Generar propuesta". Ya generada: el
+                 primario pasa a "Guardar cambios" y abajo queda el terciario
+                 "Regenerar propuesta" (usa el contexto actualizado). -->
+            <button type="button" class="cz-btn" id="btnGenerate">Generar propuesta</button>
+            <button type="button" class="cz-btn" id="btnSave" hidden>Guardar cambios</button>
+            <button type="button" class="cz-btn-text" id="btnRegen" hidden>Regenerar propuesta</button>
             <div class="cz-error" id="genError" hidden></div>
             <div class="cz-hint" id="hintGen"></div>
           </div>
 
-          <div class="cz-group cz-sidebar-actions">
+          <!-- Copiar link / PDF solo tienen sentido con una propuesta ya
+               generada; antes de eso el grupo entero va oculto. -->
+          <div class="cz-group cz-sidebar-actions" id="sidebarActions" hidden>
             <button type="button" class="cz-btn ghost" id="btnCopy">Copiar link para cliente</button>
             <button type="button" class="cz-btn ghost" id="btnPrint">Descargar PDF</button>
           </div>
@@ -120,13 +134,23 @@ import "../../styles/cotizador.css";
                ese hilo). Sin aprobar → botón "Aprobar cotización"; aprobada →
                sello verde evidente + acción para eliminar la aprobación. -->
           <div class="cz-group cz-aprobacion-group" id="aprobacionGroup" hidden>
-            <button type="button" class="cz-btn cz-approve-cta" id="btnAprobar">Aprobar cotización</button>
+            <div class="cz-estado-ctas" id="estadoCtas">
+              <button type="button" class="cz-btn cz-approve-cta" id="btnAprobar">Aprobar cotización</button>
+              <button type="button" class="cz-btn cz-reject-cta" id="btnRechazar">Marcar como rechazada</button>
+            </div>
             <div class="cz-aprobada-sello" id="aprobadaSello" hidden>
               <span class="cz-aprobada-tag">
                 <svg class="cz-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                 <span id="aprobadaTagText">Aprobada</span>
               </span>
               <button type="button" class="cz-aprobada-quitar" id="btnQuitarAprobacion">Eliminar aprobación</button>
+            </div>
+            <div class="cz-rechazada-sello" id="rechazadaSello" hidden>
+              <span class="cz-rechazada-tag">
+                <svg class="cz-x" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+                <span id="rechazadaTagText">Rechazada</span>
+              </span>
+              <button type="button" class="cz-aprobada-quitar" id="btnQuitarRechazo">Quitar rechazo</button>
             </div>
           </div>
         </aside>
@@ -152,6 +176,20 @@ import "../../styles/cotizador.css";
 
     <div class="cz-toast" id="czToast" role="status"></div>
 
+    <!-- Confirmación de borrado: modal con sus botones en vez del confirm de
+         dos clics dentro de la tarjeta del drawer. -->
+    <div class="cz-modal-backdrop" id="delBackdrop" hidden>
+      <div class="cz-modal" role="dialog" aria-modal="true" aria-labelledby="delTitle">
+        <h2 class="cz-modal-title" id="delTitle">¿Eliminar esta cotización?</h2>
+        <p class="cz-modal-quote" id="delQuote"></p>
+        <p class="cz-modal-text" id="delText"></p>
+        <div class="cz-modal-actions">
+          <button type="button" class="cz-btn ghost" id="delCancel">Cancelar</button>
+          <button type="button" class="cz-btn" id="delConfirm">Sí, eliminar</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       import {
         labelsFor,
@@ -174,6 +212,7 @@ import "../../styles/cotizador.css";
         postComentario,
         renderComentarios,
         esAprobacion,
+        esRechazo,
         deleteAprobacion,
       } from "../../lib/cotizador-comentarios.js";
       import { saveQuoteRemote, deleteQuoteRemote } from "../../lib/cotizador-quotes-store.js";
@@ -222,11 +261,19 @@ import "../../styles/cotizador.css";
         localStorage.removeItem(LEGACY_DRAFT_KEY);
       } catch (e) {}
 
+      // Compat: cotizaciones guardadas antes del flag `generado` se tratan
+      // como generadas (sus botones de link/PDF siempre estuvieron visibles).
+      quotes.forEach((q) => {
+        if (typeof q.generado === "undefined") q.generado = true;
+      });
+
       let data =
         quotes.find((q) => q.id === localStorage.getItem(CURRENT_KEY)) ||
         quotes[quotes.length - 1] ||
         defaultQuote("es");
       if (!data.id) data.id = genId();
+      // Una cotización recién creada (default) aún no tiene propuesta generada.
+      if (typeof data.generado === "undefined") data.generado = false;
 
       let ctx = localStorage.getItem(CTX_KEY) || "";
       let apiKey = localStorage.getItem(GROQ_KEY) || "";
@@ -289,6 +336,11 @@ import "../../styles/cotizador.css";
         $("btnPrint").textContent = t.descargar;
         $("btnNew").textContent = t.nueva;
         $("drawerTitle").textContent = t.guardadas;
+        document.querySelectorAll<HTMLElement>(".cz-pill").forEach((p) => {
+          const f = p.dataset.filtro;
+          p.textContent =
+            f === "aprobadas" ? t.filtroAprobadas : f === "rechazadas" ? t.filtroRechazadas : t.filtroTodas;
+        });
         $("btnDrawerNew").textContent = t.nueva;
         $("lblCliente").textContent = t.datosCliente;
         $("lblContexto").textContent = t.contexto;
@@ -313,6 +365,14 @@ import "../../styles/cotizador.css";
         $("hintApi").textContent = t.apiHint;
         $("hintGen").textContent = t.hint;
         $("btnGenerate").textContent = busy ? t.generando : t.generar;
+        // Sin propuesta: solo "Generar". Con propuesta: "Guardar cambios" +
+        // terciario "Regenerar", y aparecen link/PDF.
+        $("btnGenerate").hidden = !!data.generado;
+        $("btnSave").hidden = !data.generado;
+        $("btnSave").textContent = t.guardarCambios;
+        $("btnRegen").hidden = !data.generado;
+        $("btnRegen").textContent = busy ? t.generando : t.regenerar;
+        $("sidebarActions").hidden = !data.generado;
         $("langEs").classList.toggle("is-active", data.lang === "es");
         $("langEn").classList.toggle("is-active", data.lang === "en");
 
@@ -341,21 +401,31 @@ import "../../styles/cotizador.css";
       // las respuestas que ya no corresponden a la que está abierta.
       let commentsToken = 0;
       let commentsOpen = false;
-      // Estado de aprobación de la cotización abierta (según su hilo).
+      // Estado de la cotización abierta (según su hilo). Aprobada y rechazada
+      // son excluyentes.
       let aprobada = false;
-      // Estado de aprobación por cotización (id → bool) para pintarlo también
-      // en el drawer sin re-consultar en cada render.
+      let rechazada = false;
+      // Estado por cotización (id → bool) para pintarlo también en el drawer
+      // sin re-consultar en cada render.
       const aprobadasMap = new Map<string, boolean>();
+      const rechazadasMap = new Map<string, boolean>();
+      // Pill activa del drawer: "todas" | "aprobadas" | "rechazadas".
+      let filtroActivo = "todas";
 
-      // Refleja el estado de aprobación de la cotización abierta en el sidebar:
-      // sin aprobar muestra el botón; aprobada, el sello verde evidente.
+      // Refleja el estado de la cotización abierta en el sidebar: sin estado
+      // muestra las dos CTAs; aprobada, el sello verde; rechazada, el rojo.
       function renderAprobacion() {
         const t = labelsFor(data.lang);
+        const sinEstado = !aprobada && !rechazada;
         $("btnAprobar").textContent = t.aprobar;
-        $("btnAprobar").hidden = aprobada;
+        $("btnRechazar").textContent = t.rechazar;
+        $("estadoCtas").hidden = !sinEstado;
         $("aprobadaSello").hidden = !aprobada;
         $("aprobadaTagText").textContent = t.aprobada;
         $("btnQuitarAprobacion").textContent = t.eliminarAprobacion;
+        $("rechazadaSello").hidden = !rechazada;
+        $("rechazadaTagText").textContent = t.rechazada;
+        $("btnQuitarRechazo").textContent = t.quitarRechazo;
       }
 
       async function loadComments() {
@@ -376,9 +446,11 @@ import "../../styles/cotizador.css";
         }
         if (token !== commentsToken) return;
 
-        // La aprobación vive en el hilo: presente → aprobada.
+        // El estado vive en el hilo: presente la marca → aprobada / rechazada.
         aprobada = comentarios.some(esAprobacion);
+        rechazada = comentarios.some(esRechazo);
         aprobadasMap.set(quoteId, aprobada);
+        rechazadasMap.set(quoteId, rechazada);
         $("aprobacionGroup").hidden = false;
         renderAprobacion();
 
@@ -402,20 +474,22 @@ import "../../styles/cotizador.css";
         $("czComments").hidden = true;
       });
 
-      /* ---------- Aprobación desde el admin ---------- */
-      // Aprobar publica el mismo comentario marcado que usa el visor del
-      // cliente; eliminar la aprobación lo borra del hilo (con la clave) y el
-      // visor revierte su estado en la próxima carga.
+      /* ---------- Estado (aprobar / rechazar) desde el admin ---------- */
+      // Aprobar y rechazar publican un comentario marcado en el hilo; quitar el
+      // estado borra esas marcas (con la clave). Aprobada y rechazada son
+      // excluyentes: al marcar una se limpia la otra si estaba puesta.
       let aprobacionBusy = false;
 
-      // Cambia el estado de aprobación de una cotización cualquiera (por id) y
-      // sincroniza sidebar, mapa y drawer. Lo usan el sidebar y el drawer.
-      async function setAprobacion(quoteId: string, meta: any, aprobar: boolean) {
+      // Cambia el estado de una cotización cualquiera (por id) y sincroniza
+      // sidebar, mapas y drawer. `estado`: "aprobada" | "rechazada" | "ninguno".
+      async function setEstado(quoteId: string, meta: any, estado: string) {
         if (aprobacionBusy) return;
         const t = labelsFor(data.lang);
+        const eraAprobada = aprobadasMap.get(quoteId) === true;
         aprobacionBusy = true;
         try {
-          if (aprobar) {
+          if (estado === "aprobada") {
+            if (rechazadasMap.get(quoteId)) await deleteAprobacion(quoteId, clave, "rechazo");
             await postComentario({
               quote: quoteId,
               autor: "No Flag Brand",
@@ -424,13 +498,25 @@ import "../../styles/cotizador.css";
               cliente: [meta && meta.nombre, meta && meta.empresa].filter(Boolean).join(" · "),
             });
             toast(t.aprobadaToast);
+          } else if (estado === "rechazada") {
+            if (aprobadasMap.get(quoteId)) await deleteAprobacion(quoteId, clave, "aprobacion");
+            await postComentario({
+              quote: quoteId,
+              autor: "No Flag Brand",
+              texto: t.rechazadaComentario,
+              numero: (meta && meta.numero) || "",
+              cliente: [meta && meta.nombre, meta && meta.empresa].filter(Boolean).join(" · "),
+            });
+            toast(t.rechazadaToast);
           } else {
-            await deleteAprobacion(quoteId, clave);
-            toast(t.aprobacionQuitada);
+            await deleteAprobacion(quoteId, clave, "todos");
+            toast(eraAprobada ? t.aprobacionQuitada : t.rechazoQuitado);
           }
-          aprobadasMap.set(quoteId, aprobar);
+          aprobadasMap.set(quoteId, estado === "aprobada");
+          rechazadasMap.set(quoteId, estado === "rechazada");
           if (quoteId === data.id) {
-            aprobada = aprobar;
+            aprobada = estado === "aprobada";
+            rechazada = estado === "rechazada";
             renderAprobacion();
           }
           if (!drawer.hidden) renderList();
@@ -443,13 +529,23 @@ import "../../styles/cotizador.css";
 
       $("btnAprobar").addEventListener("click", async () => {
         $("btnAprobar").disabled = true;
-        await setAprobacion(data.id, data.meta, true);
+        await setEstado(data.id, data.meta, "aprobada");
         $("btnAprobar").disabled = false;
+      });
+      $("btnRechazar").addEventListener("click", async () => {
+        $("btnRechazar").disabled = true;
+        await setEstado(data.id, data.meta, "rechazada");
+        $("btnRechazar").disabled = false;
       });
       $("btnQuitarAprobacion").addEventListener("click", async () => {
         $("btnQuitarAprobacion").disabled = true;
-        await setAprobacion(data.id, data.meta, false);
+        await setEstado(data.id, data.meta, "ninguno");
         $("btnQuitarAprobacion").disabled = false;
+      });
+      $("btnQuitarRechazo").addEventListener("click", async () => {
+        $("btnQuitarRechazo").disabled = true;
+        await setEstado(data.id, data.meta, "ninguno");
+        $("btnQuitarRechazo").disabled = false;
       });
 
       /* ---------- Saved quotes drawer ---------- */
@@ -457,6 +553,9 @@ import "../../styles/cotizador.css";
       // de aprobada en el drawer y el sello del sidebar.
       const CHECK_SVG =
         '<svg class="cz-check" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>';
+      // Heroicons "x-mark" para el badge de rechazada en el drawer.
+      const X_SVG =
+        '<svg class="cz-x" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.4" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>';
 
       function renderList() {
         const t = labelsFor(data.lang);
@@ -470,13 +569,28 @@ import "../../styles/cotizador.css";
           return;
         }
         const sorted = [...quotes].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-        for (const q of sorted) {
+        // La pill activa filtra qué cotizaciones se listan.
+        const visibles = sorted.filter((q) => {
+          if (filtroActivo === "aprobadas") return aprobadasMap.get(q.id) === true;
+          if (filtroActivo === "rechazadas") return rechazadasMap.get(q.id) === true;
+          return true;
+        });
+        if (!visibles.length) {
+          const empty = document.createElement("p");
+          empty.className = "cz-hint";
+          empty.textContent = t.vacio;
+          list.appendChild(empty);
+          return;
+        }
+        for (const q of visibles) {
           const esAprobada = aprobadasMap.get(q.id) === true;
+          const esRechazada = rechazadasMap.get(q.id) === true;
           const item = document.createElement("div");
           item.className =
             "cz-quote-item" +
             (q.id === data.id ? " is-active" : "") +
-            (esAprobada ? " is-approved" : "");
+            (esAprobada ? " is-approved" : "") +
+            (esRechazada ? " is-rejected" : "");
 
           const open = document.createElement("button");
           open.type = "button";
@@ -494,6 +608,12 @@ import "../../styles/cotizador.css";
             badge.className = "cz-quote-aprobada";
             badge.innerHTML = CHECK_SVG;
             badge.appendChild(document.createTextNode(t.aprobada));
+            numWrap.appendChild(badge);
+          } else if (esRechazada) {
+            const badge = document.createElement("span");
+            badge.className = "cz-quote-rechazada";
+            badge.innerHTML = X_SVG;
+            badge.appendChild(document.createTextNode(t.rechazada));
             numWrap.appendChild(badge);
           }
           const total = document.createElement("span");
@@ -538,36 +658,13 @@ import "../../styles/cotizador.css";
           del.type = "button";
           del.textContent = t.eliminar;
           del.className = "cz-quote-del";
-          // Two-step delete instead of a native confirm(): first click arms
-          // the button, second click deletes. Clicking elsewhere re-renders
-          // the list, which disarms it.
-          del.addEventListener("click", () => {
-            if (!del.classList.contains("is-armed")) {
-              del.classList.add("is-armed");
-              del.textContent = t.confirmEliminar;
-              return;
-            }
-            quotes = quotes.filter((x) => x.id !== q.id);
-            try {
-              localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
-            } catch (e) {}
-            if (q.remoteId) {
-              // Cancela cualquier auto-sync pendiente para que no re-cree la
-              // cotización en el backend justo después de borrarla.
-              if (q.id === data.id) clearTimeout(syncTimer);
-              // Best-effort: si nunca se guardó en el backend (o ya no está
-              // configurado), esto falla en silencio — la cotización local
-              // ya se borró, que es lo que importa.
-              deleteQuoteRemote(q.remoteId, clave).catch(() => {});
-            }
-            if (q.id === data.id) {
-              data = quotes[quotes.length - 1] || newQuote(data.lang);
-            }
-            refresh();
-          });
+          // El borrado se confirma en un modal con sus botones (openDeleteModal),
+          // no dentro de la tarjeta.
+          del.addEventListener("click", () => openDeleteModal(q));
           actions.append(dup, del);
 
-          // Quitar aprobación directo desde el drawer (solo si está aprobada).
+          // Acciones de estado directo desde el drawer: si ya tiene estado, se
+          // ofrece quitarlo; si no, aprobar o marcar como rechazada.
           if (esAprobada) {
             const unap = document.createElement("button");
             unap.type = "button";
@@ -575,10 +672,41 @@ import "../../styles/cotizador.css";
             unap.textContent = t.quitarAprobacion;
             unap.addEventListener("click", async () => {
               unap.disabled = true;
-              await setAprobacion(q.id, q.meta, false);
+              await setEstado(q.id, q.meta, "ninguno");
               if (!drawer.hidden) renderList();
             });
             actions.append(unap);
+          } else if (esRechazada) {
+            const unrej = document.createElement("button");
+            unrej.type = "button";
+            unrej.className = "cz-quote-unrej";
+            unrej.textContent = t.quitarRechazo;
+            unrej.addEventListener("click", async () => {
+              unrej.disabled = true;
+              await setEstado(q.id, q.meta, "ninguno");
+              if (!drawer.hidden) renderList();
+            });
+            actions.append(unrej);
+          } else {
+            const ap = document.createElement("button");
+            ap.type = "button";
+            ap.className = "cz-quote-ap";
+            ap.textContent = t.aprobarCorto;
+            ap.addEventListener("click", async () => {
+              ap.disabled = true;
+              await setEstado(q.id, q.meta, "aprobada");
+              if (!drawer.hidden) renderList();
+            });
+            const rej = document.createElement("button");
+            rej.type = "button";
+            rej.className = "cz-quote-rej";
+            rej.textContent = t.rechazarCorto;
+            rej.addEventListener("click", async () => {
+              rej.disabled = true;
+              await setEstado(q.id, q.meta, "rechazada");
+              if (!drawer.hidden) renderList();
+            });
+            actions.append(ap, rej);
           }
 
           item.append(open, actions);
@@ -587,46 +715,144 @@ import "../../styles/cotizador.css";
       }
 
       function newQuote(lang: string) {
-        const fresh = defaultQuote(lang);
+        const fresh = defaultQuote(lang) as any;
         fresh.meta.numero = nextNumero(quotes);
+        // Sin propuesta aún: esconde link/PDF y muestra "Generar propuesta".
+        fresh.generado = false;
         return fresh;
       }
 
       const drawer = $("czDrawer");
       const backdrop = $("drawerBackdrop");
 
-      // Consulta el estado de aprobación de cada cotización guardada para
-      // pintarlo en el drawer. Best-effort en paralelo: las que fallen (o si
-      // el endpoint está apagado) simplemente no muestran badge.
+      /* ---------- Modal de confirmación de borrado ---------- */
+      // La cotización pendiente de borrar mientras el modal está abierto.
+      let delTarget: any = null;
+
+      function openDeleteModal(q: any) {
+        const t = labelsFor(data.lang);
+        delTarget = q;
+        $("delTitle").textContent = t.eliminarTitulo;
+        $("delQuote").textContent =
+          [q.meta.numero, q.q.proyecto || t.sinTitulo].filter(Boolean).join(" · ");
+        $("delText").textContent = t.eliminarTexto;
+        $("delCancel").textContent = t.cancelar;
+        $("delConfirm").textContent = t.siEliminar;
+        $("delBackdrop").hidden = false;
+        // Foco en la salida segura: Enter no borra por accidente.
+        $("delCancel").focus();
+      }
+      function closeDeleteModal() {
+        delTarget = null;
+        $("delBackdrop").hidden = true;
+      }
+
+      function deleteQuote(q: any) {
+        quotes = quotes.filter((x) => x.id !== q.id);
+        try {
+          localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
+        } catch (e) {}
+        if (q.remoteId) {
+          // Cancela cualquier auto-sync pendiente para que no re-cree la
+          // cotización en el backend justo después de borrarla.
+          if (q.id === data.id) clearTimeout(syncTimer);
+          // Best-effort: si nunca se guardó en el backend (o ya no está
+          // configurado), esto falla en silencio — la cotización local
+          // ya se borró, que es lo que importa.
+          deleteQuoteRemote(q.remoteId, clave).catch(() => {});
+        }
+        if (q.id === data.id) {
+          data = quotes[quotes.length - 1] || newQuote(data.lang);
+        }
+        refresh();
+        if (!drawer.hidden) renderList();
+      }
+
+      $("delCancel").addEventListener("click", closeDeleteModal);
+      $("delBackdrop").addEventListener("click", (e: any) => {
+        // Solo el clic en el fondo cierra; dentro del modal no.
+        if (e.target === $("delBackdrop")) closeDeleteModal();
+      });
+      $("delConfirm").addEventListener("click", () => {
+        if (!delTarget) return;
+        deleteQuote(delTarget);
+        closeDeleteModal();
+      });
+
+      // Consulta el estado de cada cotización guardada para pintarlo en el
+      // drawer. Best-effort en paralelo: las que fallen (o si el endpoint está
+      // apagado) simplemente no muestran badge.
       async function refreshAprobadas() {
         await Promise.all(
           quotes.map(async (q) => {
             try {
               const c = await fetchComentarios(q.id);
               aprobadasMap.set(q.id, c.some(esAprobacion));
+              rechazadasMap.set(q.id, c.some(esRechazo));
             } catch (e) {}
           })
         );
       }
 
+      // Cierre animado: .is-open dispara la transición CSS y `hidden` se
+      // aplica cuando termina (mismo tiempo que en cotizador.css).
+      let drawerCloseTimer: any;
+
       async function openDrawer() {
+        clearTimeout(drawerCloseTimer);
         renderList();
         drawer.hidden = false;
         backdrop.hidden = false;
+        // Doble rAF: el navegador pinta primero el estado inicial (panel fuera
+        // de pantalla) y hasta el siguiente frame entra la transición.
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (drawer.hidden) return; // se cerró antes de arrancar
+            drawer.classList.add("is-open");
+            backdrop.classList.add("is-open");
+          })
+        );
         // Pinta ya con lo que haya en el mapa; al volver el fetch, re-pinta con
         // los badges actualizados (si el drawer sigue abierto).
         await refreshAprobadas();
         if (!drawer.hidden) renderList();
       }
       function closeDrawer() {
-        drawer.hidden = true;
-        backdrop.hidden = true;
+        drawer.classList.remove("is-open");
+        backdrop.classList.remove("is-open");
+        drawerCloseTimer = setTimeout(() => {
+          drawer.hidden = true;
+          backdrop.hidden = true;
+        }, 350);
       }
-      $("btnList").addEventListener("click", () => (drawer.hidden ? openDrawer() : closeDrawer()));
+      // Pills de filtro: cambian `filtroActivo` y re-pintan la lista.
+      document.querySelectorAll<HTMLElement>(".cz-pill").forEach((pill) => {
+        pill.addEventListener("click", () => {
+          filtroActivo = pill.dataset.filtro || "todas";
+          document.querySelectorAll<HTMLElement>(".cz-pill").forEach((p) => {
+            const on = p === pill;
+            p.classList.toggle("is-active", on);
+            p.setAttribute("aria-pressed", String(on));
+          });
+          renderList();
+        });
+      });
+
+      // El toggle mira .is-open (no `hidden`): durante el cierre animado el
+      // panel sigue sin `hidden` y un clic debe reabrirlo, no re-cerrarlo.
+      $("btnList").addEventListener("click", () =>
+        drawer.classList.contains("is-open") ? closeDrawer() : openDrawer()
+      );
       $("btnDrawerClose").addEventListener("click", closeDrawer);
       backdrop.addEventListener("click", closeDrawer);
       document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && !drawer.hidden) closeDrawer();
+        if (e.key !== "Escape") return;
+        // El modal de borrado va encima del drawer: Escape lo cierra primero.
+        if (!$("delBackdrop").hidden) {
+          closeDeleteModal();
+          return;
+        }
+        if (!drawer.hidden) closeDrawer();
       });
       $("btnDrawerNew").addEventListener("click", () => {
         data = newQuote(data.lang);
@@ -739,7 +965,9 @@ import "../../styles/cotizador.css";
         refresh();
       });
 
-      $("btnGenerate").addEventListener("click", async () => {
+      // Generar y regenerar comparten flujo: la IA usa el contexto actual del
+      // sidebar. `btn` es quién disparó, para deshabilitarlo mientras corre.
+      async function runGenerate(btn: any) {
         if (busy) return;
         const t = labelsFor(data.lang);
         const errBox = $("genError");
@@ -750,10 +978,11 @@ import "../../styles/cotizador.css";
           return;
         }
         busy = true;
-        $("btnGenerate").disabled = true;
-        $("btnGenerate").textContent = t.generando;
+        btn.disabled = true;
+        btn.textContent = t.generando;
         try {
           data.q = await generateProposal({ ctx, data, apiKey, clave });
+          data.generado = true;
           save();
           renderPaper();
         } catch (err: any) {
@@ -761,9 +990,25 @@ import "../../styles/cotizador.css";
           errBox.hidden = false;
         } finally {
           busy = false;
-          $("btnGenerate").disabled = false;
-          $("btnGenerate").textContent = t.generar;
+          btn.disabled = false;
+          // refresh() repone textos y alterna Generar ↔ Guardar/Regenerar.
+          refresh();
         }
+      }
+
+      $("btnGenerate").addEventListener("click", () => runGenerate($("btnGenerate")));
+      $("btnRegen").addEventListener("click", () => runGenerate($("btnRegen")));
+
+      // Guardado manual: mismo save() del autosave, pero con confirmación
+      // visible — y sube el cambio al backend al instante, sin debounce.
+      $("btnSave").addEventListener("click", () => {
+        const t = labelsFor(data.lang);
+        save();
+        if (data.remoteId) {
+          clearTimeout(syncTimer);
+          saveQuoteRemote(data.remoteId, data, clave).catch(() => {});
+        }
+        toast(t.cambiosGuardados);
       });
 
       /* ---------- Access gate ---------- */

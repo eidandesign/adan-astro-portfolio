@@ -42,13 +42,26 @@ export function esAprobacion(c) {
   );
 }
 
-// Borra los comentarios de aprobación del hilo (la cotización vuelve a "no
-// aprobada"). Solo desde el cotizador: el endpoint verifica la clave.
-export async function deleteAprobacion(quote, clave) {
+// El rechazo viaja igual que la aprobación: un comentario con texto fijo por
+// idioma (LABELS.rechazadaComentario). Aprobada y rechazada son excluyentes;
+// solo el admin marca rechazo desde el cotizador.
+export function esRechazo(c) {
+  return (
+    c &&
+    typeof c.texto === "string" &&
+    (c.texto.startsWith(LABELS.es.rechazadaComentario) ||
+      c.texto.startsWith(LABELS.en.rechazadaComentario))
+  );
+}
+
+// Borra del hilo los comentarios de estado (aprobación y/o rechazo). `tipo`
+// elige cuáles: "aprobacion" (default, compatible), "rechazo" o "todos". Solo
+// desde el cotizador: el endpoint verifica la clave.
+export async function deleteAprobacion(quote, clave, tipo = "aprobacion") {
   const res = await fetch("/api/comentarios", {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ quote, clave }),
+    body: JSON.stringify({ quote, clave, tipo }),
   });
   if (res.status === 501 || res.status === 404) throw new ComentariosOff();
   if (!res.ok) throw new Error("delete-failed");

@@ -175,11 +175,19 @@
 }
 
 /* ===== Saved quotes drawer ===== */
+/* Entrada/salida animadas: el JS quita `hidden`, y un frame después agrega
+   .is-open — el panel desliza desde la derecha y el fondo hace fade. Al
+   cerrar, quita .is-open y espera la transición antes de re-ocultar. */
 .cz-drawer-backdrop {
   position: fixed;
   inset: 0;
   z-index: 40;
   background-color: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+.cz-drawer-backdrop.is-open {
+  opacity: 1;
 }
 .cz-drawer {
   position: fixed;
@@ -196,10 +204,21 @@
   flex-direction: column;
   gap: 18px;
   overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cz-drawer.is-open {
+  transform: translateX(0);
 }
 .cz-drawer[hidden],
 .cz-drawer-backdrop[hidden] {
   display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cz-drawer,
+  .cz-drawer-backdrop {
+    transition: none;
+  }
 }
 .cz-drawer-head {
   display: flex;
@@ -287,9 +306,55 @@
 .cz-quote-actions button:hover {
   color: var(--primary);
 }
-.cz-quote-del.is-armed {
-  color: var(--primary);
+/* ===== Modal de confirmación (eliminar cotización) ===== */
+/* Encima del drawer (z 45) y del toast (z 60), debajo del confeti (z 80). */
+.cz-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background-color: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.cz-modal-backdrop[hidden] {
+  display: none;
+}
+.cz-modal {
+  width: min(420px, 100%);
+  background-color: var(--surface-background);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cz-modal-title {
+  margin: 0;
+  font-size: 18px;
   font-weight: 500;
+  color: var(--text-primary);
+}
+.cz-modal-quote {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.cz-modal-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+.cz-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 /* ===== Layout ===== */
@@ -326,6 +391,31 @@
 .cz-sidebar-actions {
   flex-direction: row;
   gap: 8px;
+}
+/* Oculto hasta que la propuesta esté generada; el display:flex del grupo
+   necesita este override para que `hidden` gane. */
+.cz-sidebar-actions[hidden] {
+  display: none;
+}
+/* Botón terciario (solo texto): "Regenerar propuesta" bajo Guardar cambios. */
+.cz-btn-text {
+  border: none;
+  background: none;
+  padding: 4px 0;
+  font-family: "Switzer", Arial, sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.3s ease;
+}
+.cz-btn-text:hover {
+  color: var(--primary);
+}
+.cz-btn-text:disabled {
+  opacity: 0.55;
+  cursor: wait;
 }
 .cz-sidebar-actions .cz-btn {
   flex: 1;
@@ -1450,8 +1540,123 @@
    aunque el JS los oculte. Va al final para superar en orden a esas reglas. */
 .cz-aprobacion-group[hidden],
 .cz-aprobada-sello[hidden],
+.cz-rechazada-sello[hidden],
+.cz-estado-ctas[hidden],
 .cz-approve[hidden] {
   display: none;
+}
+
+/* ===== Rechazo (cotizador / admin) ===== */
+/* Las dos CTAs de estado comparten fila: aprobar (verde, primaria) y rechazar
+   (rosa, secundaria/outline) para que la acción positiva domine. */
+.cz-estado-ctas {
+  display: flex;
+  gap: 8px;
+}
+.cz-estado-ctas .cz-btn {
+  flex: 1;
+}
+/* Rechazar: outline en rosa/rojo frío, distinto del rojo cálido de marca y del
+   verde de aprobar. Blanco sobre #b23c3a = 4.9:1 al hacer hover (WCAG AA). */
+.cz-reject-cta {
+  background-color: transparent;
+  border-color: #b5514e;
+  color: #eb9694;
+}
+.cz-reject-cta:hover {
+  background-color: #b23c3a;
+  border-color: #b23c3a;
+  color: #fff;
+}
+/* Sello rojo cuando la cotización está rechazada — espejo del sello verde. */
+.cz-rechazada-sello {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid #b5514e;
+  border-radius: 8px;
+  background-color: rgba(224, 110, 110, 0.12);
+}
+.cz-rechazada-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #eb9694;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.cz-rechazada-tag .cz-x {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+/* Cotización rechazada en el drawer: borde y badge rojos. Va después de
+   .is-active/.is-approved para ganar cuando aplica. */
+.cz-quote-item.is-rejected {
+  border-color: #b5514e;
+}
+.cz-quote-rechazada {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px 1px 6px;
+  border: 1px solid #b5514e;
+  border-radius: 999px;
+  color: #eb9694;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.cz-quote-rechazada .cz-x {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+/* Acciones de estado entre Duplicar/Eliminar del drawer: aprobar resalta en
+   verde al pasar; rechazar, en rosa. */
+.cz-quote-ap:hover {
+  color: #6fcf97 !important;
+}
+.cz-quote-rej:hover {
+  color: #eb9694 !important;
+}
+.cz-quote-unrej {
+  color: #eb9694 !important;
+}
+.cz-quote-unrej:hover {
+  color: var(--primary) !important;
+}
+
+/* ===== Filtros del drawer (pills) ===== */
+.cz-filtros {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cz-pill {
+  border: 1px solid var(--border-light);
+  background: none;
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-family: "Switzer", Arial, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: border-color 0.3s ease, color 0.3s ease, background-color 0.3s ease;
+}
+.cz-pill:hover {
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+.cz-pill.is-active {
+  color: var(--text-primary);
+  border-color: var(--primary);
+  background-color: rgba(216, 72, 43, 0.1);
 }
 /* Pequeño brinco al aprobar (solo al hacer clic, no al restaurar el estado). */
 .cz-approve.is-pop {
