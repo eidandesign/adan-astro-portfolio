@@ -387,6 +387,31 @@
   flex-direction: column;
   gap: 10px;
 }
+/* Cotización abierta: número + proyecto, fija arriba del sidebar para no
+   perder el hilo al navegar entre cotizaciones guardadas. */
+.cz-current {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border-light);
+}
+.cz-current-num {
+  font-family: "Powergrotesk", Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+.cz-current-title {
+  font-family: "Switzer", Arial, sans-serif;
+  font-size: 15px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Copiar link / Descargar PDF sit side by side at the foot of the sidebar. */
 .cz-sidebar-actions {
   flex-direction: row;

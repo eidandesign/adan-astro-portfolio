@@ -80,6 +80,13 @@ import "../../styles/cotizador.css";
 
       <div class="cz-main">
         <aside class="cz-sidebar" data-noprint="1">
+          <!-- Cotización abierta: número + proyecto, para no perder el hilo
+               al navegar entre cotizaciones guardadas. -->
+          <div class="cz-current">
+            <span class="cz-current-num" id="curNumero"></span>
+            <span class="cz-current-title" id="curTitulo"></span>
+          </div>
+
           <div class="cz-group">
             <div class="cz-label" id="lblCliente">Datos del cliente</div>
             <input class="cz-input" id="inNombre" data-key="nombre" placeholder="Nombre del cliente" />
@@ -275,7 +282,20 @@ import "../../styles/cotizador.css";
       // Una cotización recién creada (default) aún no tiene propuesta generada.
       if (typeof data.generado === "undefined") data.generado = false;
 
-      let ctx = localStorage.getItem(CTX_KEY) || "";
+      // Migra el contexto global (una sola caja compartida por todas) a
+      // contexto por cotización: la abierta hereda el texto viejo una vez.
+      try {
+        const legacyCtx = localStorage.getItem(CTX_KEY);
+        if (legacyCtx !== null) {
+          if (typeof data.ctx === "undefined") data.ctx = legacyCtx;
+          localStorage.removeItem(CTX_KEY);
+        }
+      } catch (e) {}
+      quotes.forEach((q) => {
+        if (typeof q.ctx === "undefined") q.ctx = "";
+      });
+      if (typeof data.ctx === "undefined") data.ctx = "";
+
       let apiKey = localStorage.getItem(GROQ_KEY) || "";
       // The access key in plain text — sent to /api/cotizar, which verifies
       // its SHA-256 against the COTIZADOR_KEY_HASH env var.
@@ -290,7 +310,6 @@ import "../../styles/cotizador.css";
         try {
           localStorage.setItem(QUOTES_KEY, JSON.stringify(quotes));
           localStorage.setItem(CURRENT_KEY, data.id);
-          localStorage.setItem(CTX_KEY, ctx);
         } catch (e) {}
         syncRemote();
       }
@@ -376,12 +395,15 @@ import "../../styles/cotizador.css";
         $("langEs").classList.toggle("is-active", data.lang === "es");
         $("langEn").classList.toggle("is-active", data.lang === "en");
 
+        $("curNumero").textContent = data.meta.numero || "—";
+        $("curTitulo").textContent = data.q.proyecto || t.sinTitulo;
+
         $("inNombre").value = data.meta.nombre;
         $("inEmpresa").value = data.meta.empresa;
         $("inContacto").value = data.meta.contacto;
         $("inNumero").value = data.meta.numero;
         $("inFecha").value = data.meta.fecha;
-        $("inCtx").value = ctx;
+        $("inCtx").value = data.ctx || "";
         $("inDeadline").value = data.meta.deadline || "";
         $("inRate").value = data.rate;
         $("inMoneda").value = data.moneda;
@@ -719,6 +741,7 @@ import "../../styles/cotizador.css";
         fresh.meta.numero = nextNumero(quotes);
         // Sin propuesta aún: esconde link/PDF y muestra "Generar propuesta".
         fresh.generado = false;
+        fresh.ctx = "";
         return fresh;
       }
 
@@ -856,7 +879,6 @@ import "../../styles/cotizador.css";
       });
       $("btnDrawerNew").addEventListener("click", () => {
         data = newQuote(data.lang);
-        ctx = "";
         save();
         closeDrawer();
         refresh();
@@ -871,7 +893,7 @@ import "../../styles/cotizador.css";
         });
       }
       $("inCtx").addEventListener("input", (e: any) => {
-        ctx = e.currentTarget.value;
+        data.ctx = e.currentTarget.value;
         save();
       });
       $("inDeadline").addEventListener("change", (e: any) => {
@@ -960,7 +982,6 @@ import "../../styles/cotizador.css";
       // one loses nothing — no confirmation needed.
       $("btnNew").addEventListener("click", () => {
         data = newQuote(data.lang);
-        ctx = "";
         save();
         refresh();
       });
@@ -972,7 +993,7 @@ import "../../styles/cotizador.css";
         const t = labelsFor(data.lang);
         const errBox = $("genError");
         errBox.hidden = true;
-        if (!ctx.trim()) {
+        if (!(data.ctx || "").trim()) {
           errBox.textContent = t.errCtx;
           errBox.hidden = false;
           return;
@@ -981,7 +1002,7 @@ import "../../styles/cotizador.css";
         btn.disabled = true;
         btn.textContent = t.generando;
         try {
-          data.q = await generateProposal({ ctx, data, apiKey, clave });
+          data.q = await generateProposal({ ctx: data.ctx, data, apiKey, clave });
           data.generado = true;
           save();
           renderPaper();

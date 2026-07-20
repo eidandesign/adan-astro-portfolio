@@ -654,32 +654,34 @@ export function renderDoc(root, data, opts = {}) {
     left.appendChild(editableText(el("div", "cz-muted cz-inv-detail", inv.detalle), (v) => (inv.detalle = v)));
     row.appendChild(left);
 
-    const horas = el("span", "cz-inv-hours");
-    const horasVal = editableText(
-      el("span", null, inv.horas === null || inv.horas === undefined ? "—" : String(inv.horas)),
-      (v) => {
-        if (v === "—" || v === "") {
-          inv.horas = null;
-        } else {
-          inv.horas = Number(v.replace(/[^0-9.]/g, "")) || 0;
-          inv.precio = inv.horas * rate;
+    if (editable) {
+      const horas = el("span", "cz-inv-hours");
+      const horasVal = editableText(
+        el("span", null, inv.horas === null || inv.horas === undefined ? "—" : String(inv.horas)),
+        (v) => {
+          if (v === "—" || v === "") {
+            inv.horas = null;
+          } else {
+            inv.horas = Number(v.replace(/[^0-9.]/g, "")) || 0;
+            inv.precio = inv.horas * rate;
+          }
+          onChange(data, true);
         }
-        onChange(data, true);
+      );
+      horas.appendChild(horasVal);
+      if (inv.horas !== null && inv.horas !== undefined) {
+        horas.appendChild(document.createTextNode(` h × $${rate}/h`));
       }
-    );
-    horas.appendChild(horasVal);
-    if (inv.horas !== null && inv.horas !== undefined) {
-      horas.appendChild(document.createTextNode(` h × $${rate}/h`));
-    }
-    row.appendChild(horas);
+      row.appendChild(horas);
 
-    row.appendChild(
-      editableText(el("span", "cz-inv-price", fmtMoney(inv.precio, data.moneda, data.lang)), (v) => {
-        inv.precio = Number(v.replace(/[^0-9.]/g, "")) || 0;
-        onChange(data, true);
-      })
-    );
-    if (editable) row.appendChild(removeBtn("inversion", i));
+      row.appendChild(
+        editableText(el("span", "cz-inv-price", fmtMoney(inv.precio, data.moneda, data.lang)), (v) => {
+          inv.precio = Number(v.replace(/[^0-9.]/g, "")) || 0;
+          onChange(data, true);
+        })
+      );
+      row.appendChild(removeBtn("inversion", i));
+    }
     inversion.appendChild(row);
   });
   const totalRow = el("div", "cz-total-row");
