@@ -8,6 +8,9 @@
     },
     "api/quotes.js": {
       "maxDuration": 15
+    },
+    "api/nfb-lead.js": {
+      "maxDuration": 15
     }
   }
 }

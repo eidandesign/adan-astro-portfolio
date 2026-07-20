@@ -1,0 +1,944 @@
+---
+// No Flag Brand — landing independiente del estudio (adancareta.com/noflagbrand).
+// No es una sección del homepage: página propia con su header, footer y
+// formulario de cotización (backend en api/nfb-lead.js).
+import "../styles/site.css";
+import "../styles/noflagbrand.css";
+
+const title = "No Flag Brand — Estudio de diseño, producto y branding";
+const description =
+  "Estudio de diseño independiente liderado por Adán Careta. Creamos marcas, productos digitales, sitios web y experiencias junto a equipos especializados.";
+const canonical = new URL("/noflagbrand/", Astro.site);
+const ogImage = new URL("/images/noflagbrand-og.png", Astro.site);
+
+const services = [
+  {
+    num: "{.01}",
+    name: "Branding e identidad",
+    value: "Branding e identidad",
+    desc: "Creamos marcas con una personalidad clara, relevante y preparada para crecer.",
+    tags: [
+      "Estrategia de marca",
+      "Identidad visual",
+      "Logotipo",
+      "Sistema gráfico",
+      "Guías de marca",
+      "Aplicaciones",
+      "Packaging",
+    ],
+  },
+  {
+    num: "{.02}",
+    name: "Diseño de productos digitales",
+    value: "Diseño de producto UX/UI",
+    desc: "Diseñamos experiencias digitales funcionales, intuitivas y visualmente memorables.",
+    tags: [
+      "UX/UI",
+      "Apps móviles",
+      "Plataformas web",
+      "Dashboards",
+      "SaaS",
+      "Arquitectura de información",
+      "Prototipos",
+      "Design systems",
+    ],
+  },
+  {
+    num: "{.03}",
+    name: "Sitios web",
+    value: "Sitio web",
+    desc: "Diseñamos y desarrollamos sitios que comunican claramente el valor de una marca y ayudan a convertir visitantes en clientes.",
+    tags: [
+      "Landing pages",
+      "Sitios corporativos",
+      "Portafolios",
+      "E-commerce",
+      "Diseño responsive",
+      "Desarrollo frontend",
+      "Integraciones",
+      "Optimización de conversión",
+    ],
+  },
+  {
+    num: "{.04}",
+    name: "Estrategia y consultoría",
+    value: "Auditoría o consultoría",
+    desc: "Ayudamos a ordenar ideas, detectar oportunidades y definir el camino adecuado antes de comenzar a diseñar.",
+    tags: [
+      "Auditorías UX",
+      "Research",
+      "Workshops",
+      "Definición de producto",
+      "Estrategia digital",
+      "Roadmaps",
+      "Consultoría de diseño",
+      "Evaluación de productos",
+    ],
+  },
+  {
+    num: "{.05}",
+    name: "Marketing y comunicación",
+    value: "Marketing y comunicación",
+    desc: "Construimos sistemas visuales y contenidos que ayudan a las marcas a comunicar de forma consistente.",
+    tags: [
+      "Estrategia de contenidos",
+      "Campañas",
+      "Social media",
+      "Presentaciones",
+      "Dirección de arte",
+      "Materiales comerciales",
+      "Comunicación de producto",
+    ],
+    wide: true,
+  },
+];
+
+const steps = [
+  {
+    num: "01",
+    name: "Descubrimiento",
+    desc: "Conocemos el proyecto, sus objetivos, usuarios, contexto, necesidades y restricciones.",
+  },
+  {
+    num: "02",
+    name: "Estrategia",
+    desc: "Definimos el alcance, las prioridades, el equipo necesario y la dirección del proyecto.",
+  },
+  {
+    num: "03",
+    name: "Diseño y construcción",
+    desc: "Exploramos, diseñamos, validamos y desarrollamos la solución en colaboración con el cliente.",
+  },
+  {
+    num: "04",
+    name: "Lanzamiento y evolución",
+    desc: "Preparamos entregables, acompañamos la implementación y detectamos oportunidades para seguir mejorando.",
+  },
+];
+
+const team = [
+  {
+    initials: "AC",
+    color: "linear-gradient(135deg, #0b53e7, #1d46b8)",
+    name: "Adán Careta",
+    role: "Founder & Product Designer",
+    desc: "Adán lidera la estrategia, dirección creativa y experiencia de producto de cada proyecto. Cuenta con experiencia en branding, UX/UI, diseño de productos digitales, sitios web y sistemas de diseño.",
+  },
+  {
+    initials: "NA",
+    color: "linear-gradient(135deg, #f0532d, #eda61f)",
+    name: "Nombre Apellido",
+    role: "Brand / Visual Designer",
+    desc: "Especialista en identidad visual, sistemas gráficos, comunicación de marca y dirección de arte.",
+  },
+  {
+    initials: "NA",
+    color: "linear-gradient(135deg, #21c773, #0b53e7)",
+    name: "Nombre Apellido",
+    role: "Developer",
+    desc: "Responsable de convertir las propuestas de diseño en experiencias digitales funcionales, rápidas y escalables.",
+  },
+  {
+    initials: "NA",
+    color: "linear-gradient(135deg, #eda61f, #f8c9a0)",
+    name: "Nombre Apellido",
+    role: "Marketing Strategist",
+    desc: "Especialista en estrategia de comunicación, campañas, contenido y crecimiento de marca.",
+  },
+  {
+    initials: "NA",
+    color: "linear-gradient(135deg, #1d46b8, #21c773)",
+    name: "Nombre Apellido",
+    role: "Business Development",
+    desc: "Responsable de acompañar a clientes potenciales, identificar oportunidades y ayudar a estructurar el alcance inicial de los proyectos.",
+  },
+];
+
+const projects = [
+  {
+    img: "/images/stanza-cal-main.jpg",
+    name: "Stanza",
+    industry: "Deporte y entretenimiento",
+    service: "Producto digital · UX/UI",
+    desc: "Rediseño de la experiencia de suscripción y onboarding de una plataforma de calendarios deportivos con millones de usuarios.",
+    href: "/case-studies/stanza",
+  },
+  {
+    img: "/images/spacemarts-1.jpg",
+    name: "SpaceMart",
+    industry: "E-commerce",
+    service: "Producto digital · Sitio web",
+    desc: "Concepto de e-commerce de abastecimiento espacial: arquitectura de información, sistema visual y experiencia de compra.",
+    href: "/case-studies/space-marts",
+  },
+  {
+    img: "/images/tasketeer-branding-p-1080.png",
+    name: "Tasketeer",
+    industry: "Servicios on-demand",
+    service: "Branding · Producto digital",
+    desc: "Identidad de marca y diseño de producto para una app de tareas y servicios a domicilio.",
+    href: "/portfolio/tasketeer",
+  },
+  {
+    img: "/images/coca-cola-main.jpg",
+    name: "Coca-Cola",
+    industry: "Consumo",
+    service: "Diseño visual · Experiencias digitales",
+    desc: "Colaboración en experiencias digitales y piezas visuales para una de las marcas más reconocidas del mundo.",
+    href: "/portfolio/coca-cola",
+  },
+];
+
+const fitList = [
+  "Buscas un equipo que se involucre realmente en el proyecto.",
+  "Valoras la estrategia tanto como la ejecución visual.",
+  "Quieres construir algo con personalidad y no una solución genérica.",
+  "Estás dispuesto a colaborar, compartir información y tomar decisiones.",
+  "Buscas calidad y acompañamiento, no únicamente el precio más bajo.",
+  "Necesitas integrar diseño, tecnología y comunicación dentro de una misma dirección.",
+];
+
+const serviceOptions = [
+  "Branding e identidad",
+  "Diseño de producto UX/UI",
+  "Sitio web",
+  "Desarrollo",
+  "Design system",
+  "Auditoría o consultoría",
+  "Marketing y comunicación",
+  "Presentación o pitch deck",
+  "Packaging",
+  "Otro",
+];
+
+const budgetOptions = [
+  "Menos de $25,000 MXN",
+  "$25,000 a $50,000 MXN",
+  "$50,000 a $100,000 MXN",
+  "$100,000 a $250,000 MXN",
+  "Más de $250,000 MXN",
+  "Aún no lo he definido",
+];
+
+const principleChips = ["#0b53e7", "#f0532d", "#eda61f", "#21c773"];
+const principles = [
+  {
+    name: "Equipos hechos para cada proyecto",
+    desc: "Integramos únicamente las disciplinas y especialistas que realmente necesitas.",
+  },
+  {
+    name: "Contacto directo",
+    desc: "Trabajas directamente con las personas responsables de diseñar y construir tu proyecto.",
+  },
+  {
+    name: "Estrategia antes que decoración",
+    desc: "Cada decisión visual debe responder a una necesidad del negocio y de sus usuarios.",
+  },
+  {
+    name: "Calidad sobre volumen",
+    desc: "Preferimos trabajar en pocos proyectos y dedicarles la atención que requieren.",
+  },
+];
+---
+
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="No Flag Brand" />
+    <meta name="theme-color" content="#0c1015" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="No Flag Brand" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="es_MX" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <link rel="icon" type="image/png" href="/images/favicon.png" />
+    <link rel="apple-touch-icon" href="/images/webclip.jpg" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        name: "No Flag Brand",
+        description,
+        url: canonical.toString(),
+        logo: new URL("/images/noflagbrand-logo-white.svg", Astro.site).toString(),
+        founder: { "@type": "Person", name: "Adán Careta", url: "https://www.adancareta.com" },
+        areaServed: "MX",
+      })}
+    />
+
+    <noscript>
+      <style>
+        [data-nfb-reveal] {
+          opacity: 1;
+          transform: none;
+        }
+      </style>
+    </noscript>
+  </head>
+
+  <body class="nfb-body">
+    <!-- ============ HEADER ============ -->
+    <header class="nfb-header">
+      <div class="nfb-container nfb-header-inner">
+        <a href="#inicio" class="nfb-logo" aria-label="No Flag Brand — inicio">
+          <img src="/images/noflagbrand-logo-white.svg" alt="No Flag Brand" width="88" height="91" />
+          <span class="nfb-logo-sub">Independent<br />Design Studio</span>
+        </a>
+        <nav class="nfb-nav" aria-label="Navegación principal">
+          <a href="#estudio">Estudio</a>
+          <a href="#servicios">Servicios</a>
+          <a href="#proceso">Proceso</a>
+          <a href="#equipo">Equipo</a>
+          <a href="#proyectos">Proyectos</a>
+          <a href="#cotizar" class="nfb-btn nfb-btn-primary">Cotizar proyecto</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="inicio">
+      <!-- ============ 1. HERO ============ -->
+      <section class="nfb-hero">
+        <div class="nfb-hero-glow" aria-hidden="true"></div>
+        <div class="nfb-container">
+          <div class="nfb-hero-grid">
+            <div data-nfb-reveal>
+              <span class="nfb-eyebrow">Independent Design Studio</span>
+              <h1 class="nfb-h1">
+                El equipo correcto para convertir buenas ideas en <span class="nfb-em">grandes</span> productos y marcas.
+              </h1>
+              <p class="nfb-lead">
+                No Flag Brand es un estudio de diseño independiente liderado por Adán Careta. Creamos equipos
+                especializados para ayudar a marcas, productos y empresas a resolver retos de diseño, tecnología y
+                comunicación.
+              </p>
+              <p class="nfb-lead nfb-muted">
+                Trabajamos de manera cercana, estratégica y sin procesos innecesarios, integrando únicamente a los
+                especialistas que cada proyecto necesita.
+              </p>
+              <div class="nfb-hero-actions">
+                <a href="#cotizar" class="nfb-btn nfb-btn-primary">Cotizar proyecto</a>
+                <a href="#servicios" class="nfb-btn nfb-btn-ghost">Conocer nuestros servicios</a>
+              </div>
+            </div>
+            <div class="nfb-flag" data-nfb-reveal aria-hidden="true">
+              <div class="nfb-flag-pole"></div>
+              <div class="nfb-flag-cloth">
+                <img src="/images/forms.png" alt="" loading="eager" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="nfb-marquee" aria-hidden="true">
+          <div class="nfb-marquee-track">
+            {
+              [0, 1].map(() => (
+                <>
+                  <span>Branding</span>
+                  <span class="dot">·</span>
+                  <span>
+                    Producto <b>digital</b>
+                  </span>
+                  <span>·</span>
+                  <span>Sitios web</span>
+                  <span>·</span>
+                  <span>
+                    <b>Estrategia</b>
+                  </span>
+                  <span>·</span>
+                  <span>Marketing</span>
+                  <span>·</span>
+                  <span>
+                    Design <b>systems</b>
+                  </span>
+                  <span>·</span>
+                </>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 2. INTRODUCCIÓN AL ESTUDIO ============ -->
+      <section id="estudio" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">El estudio</span>
+            <h2 class="nfb-h2">No somos una agencia tradicional.</h2>
+            <p class="nfb-lead">
+              No Flag Brand funciona como un estudio boutique y una red de especialistas. Cada proyecto es liderado
+              directamente por Adán Careta y, dependiendo de sus necesidades, integramos perfiles de diseño,
+              desarrollo, contenido, marketing o estrategia.
+            </p>
+            <p class="nfb-lead nfb-muted">
+              Esto nos permite formar equipos más ágiles, mantener una comunicación cercana y dedicar más atención a
+              cada proyecto.
+            </p>
+          </div>
+          <div class="nfb-principles">
+            {
+              principles.map((p, i) => (
+                <article class="nfb-principle" data-nfb-reveal>
+                  <span
+                    class="nfb-principle-chip"
+                    style={`background:${principleChips[i]}`}
+                    aria-hidden="true"
+                  />
+                  <h3 class="nfb-h3">{p.name}</h3>
+                  <p>{p.desc}</p>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 3. SERVICIOS ============ -->
+      <section id="servicios" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">Servicios</span>
+            <h2 class="nfb-h2">Lo que podemos construir contigo.</h2>
+            <p class="nfb-lead nfb-muted">
+              Cinco frentes de trabajo que se combinan según lo que tu proyecto necesita — nunca paquetes genéricos.
+            </p>
+          </div>
+          <div class="nfb-services">
+            {
+              services.map((s) => (
+                <article class:list={["nfb-service", { "nfb-service-wide": s.wide }]} data-nfb-reveal>
+                  <div class="nfb-service-top">
+                    <h3 class="nfb-h3">{s.name}</h3>
+                    <span class="nfb-service-num">{s.num}</span>
+                  </div>
+                  <p>{s.desc}</p>
+                  <div class="nfb-service-tags">
+                    {s.tags.map((t) => (
+                      <span>{t}</span>
+                    ))}
+                  </div>
+                  <a href="#cotizar" class="nfb-link-arrow" data-servicio={s.value}>
+                    Cuéntanos sobre tu proyecto <span class="arr">→</span>
+                  </a>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 4. CÓMO TRABAJAMOS ============ -->
+      <section id="proceso" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">Cómo trabajamos</span>
+            <h2 class="nfb-h2">Un proceso claro, sin complicarlo de más.</h2>
+          </div>
+          <div class="nfb-steps">
+            {
+              steps.map((s) => (
+                <div class="nfb-step" data-nfb-reveal>
+                  <span class="nfb-step-num" aria-hidden="true">
+                    {s.num}
+                  </span>
+                  <h3 class="nfb-h3">{s.name}</h3>
+                  <p>{s.desc}</p>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 5. EQUIPO ============ -->
+      <section id="equipo" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">El equipo</span>
+            <h2 class="nfb-h2">Un equipo que se adapta al proyecto.</h2>
+            <p class="nfb-lead nfb-muted">
+              Cada proyecto es diferente. Por eso, en lugar de asignar siempre al mismo equipo, reunimos a los
+              perfiles más adecuados de acuerdo con los objetivos, la industria y el alcance.
+            </p>
+          </div>
+          <div class="nfb-team">
+            {
+              team.map((m) => (
+                <article class="nfb-member" data-nfb-reveal>
+                  <div class="nfb-avatar" style={`background:${m.color}`} aria-hidden="true">
+                    {m.initials}
+                  </div>
+                  <div class="nfb-member-body">
+                    <h3 class="nfb-h3">{m.name}</h3>
+                    <span class="nfb-member-role">{m.role}</span>
+                    <p>{m.desc}</p>
+                  </div>
+                </article>
+              ))
+            }
+          </div>
+          <p class="nfb-team-note" data-nfb-reveal>El equipo puede cambiar de acuerdo con las necesidades de cada proyecto.</p>
+        </div>
+      </section>
+
+      <!-- ============ 6. PROYECTOS ============ -->
+      <section id="proyectos" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">Proyectos</span>
+            <h2 class="nfb-h2">Algunas ideas que ya ayudamos a convertir en realidad.</h2>
+          </div>
+          <div class="nfb-projects">
+            {
+              projects.map((p) => (
+                <article class="nfb-project" data-nfb-reveal>
+                  <div class="nfb-project-img">
+                    <img src={p.img} alt={`Proyecto ${p.name}`} loading="lazy" />
+                  </div>
+                  <div class="nfb-project-body">
+                    <div class="nfb-project-meta">
+                      <span>{p.industry}</span>
+                      <span>{p.service}</span>
+                    </div>
+                    <h3 class="nfb-h3">{p.name}</h3>
+                    <p>{p.desc}</p>
+                    <span class="nfb-project-credit">Proyecto liderado por Adán Careta</span>
+                    <a href={p.href} class="nfb-link-arrow">
+                      Ver proyecto <span class="arr">→</span>
+                    </a>
+                  </div>
+                </article>
+              ))
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 7. ¿ES PARA TU PROYECTO? ============ -->
+      <section class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">¿Hacemos equipo?</span>
+            <h2 class="nfb-h2">Podemos trabajar bien juntos si…</h2>
+          </div>
+          <ul class="nfb-fit" data-nfb-reveal>
+            {fitList.map((f) => <li>{f}</li>)}
+          </ul>
+          <p class="nfb-fit-note" data-nfb-reveal>
+            Trabajamos con startups, empresas, equipos internos y marcas que están comenzando una nueva etapa.
+          </p>
+        </div>
+      </section>
+
+      <!-- ============ 8. FORMULARIO DE COTIZACIÓN ============ -->
+      <section id="cotizar" class="nfb-section">
+        <div class="nfb-container">
+          <div class="nfb-section-head" data-nfb-reveal>
+            <span class="nfb-eyebrow">Cotiza tu proyecto</span>
+            <h2 class="nfb-h2">Cuéntanos qué quieres construir.</h2>
+            <p class="nfb-lead nfb-muted">
+              No necesitas tener todo resuelto. Comparte lo que sabes hasta ahora y te ayudaremos a definir el
+              siguiente paso.
+            </p>
+          </div>
+
+          <div class="nfb-form-wrap" data-nfb-reveal>
+            <form id="nfb-form" novalidate>
+              <div class="nfb-form">
+                <fieldset>
+                  <legend class="nfb-eyebrow">Información de contacto</legend>
+                  <div class="nfb-form-grid">
+                    <div class="nfb-field" data-field="nombre">
+                      <label for="f-nombre">Nombre completo <span class="req" aria-hidden="true">*</span></label>
+                      <input id="f-nombre" name="nombre" type="text" autocomplete="name" maxlength="120" required placeholder="Tu nombre" />
+                      <span class="nfb-field-error" role="alert">Escribe tu nombre para poder contactarte.</span>
+                    </div>
+                    <div class="nfb-field" data-field="empresa">
+                      <label for="f-empresa">Empresa o proyecto</label>
+                      <input id="f-empresa" name="empresa" type="text" autocomplete="organization" maxlength="120" placeholder="Nombre de tu empresa o proyecto" />
+                    </div>
+                    <div class="nfb-field" data-field="email">
+                      <label for="f-email">Correo electrónico <span class="req" aria-hidden="true">*</span></label>
+                      <input id="f-email" name="email" type="email" autocomplete="email" maxlength="160" required placeholder="tu@correo.com" />
+                      <span class="nfb-field-error" role="alert">Necesitamos un correo válido para responderte.</span>
+                    </div>
+                    <div class="nfb-field" data-field="telefono">
+                      <label for="f-telefono">Teléfono o WhatsApp</label>
+                      <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" maxlength="40" placeholder="+52 …" />
+                    </div>
+                    <div class="nfb-field" data-field="sitio" style="grid-column: 1 / -1;">
+                      <label for="f-sitio">Sitio web, producto o redes actuales <span class="nfb-muted">(opcional)</span></label>
+                      <input id="f-sitio" name="sitio" type="text" maxlength="300" placeholder="https://…" />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend class="nfb-eyebrow">¿Qué necesitas?</legend>
+                  <div class="nfb-field" data-field="servicios">
+                    <div class="nfb-pills" role="group" aria-label="Selecciona uno o varios servicios">
+                      {
+                        serviceOptions.map((s) => (
+                          <label class="nfb-pill">
+                            <input type="checkbox" name="servicios" value={s} />
+                            <span>{s}</span>
+                          </label>
+                        ))
+                      }
+                    </div>
+                    <span class="nfb-field-error" role="alert">Selecciona al menos una opción.</span>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend class="nfb-eyebrow">Información del proyecto</legend>
+                  <div class="nfb-form-grid">
+                    <div class="nfb-field" data-field="proyecto" style="grid-column: 1 / -1;">
+                      <label for="f-proyecto">Cuéntanos brevemente sobre el proyecto <span class="req" aria-hidden="true">*</span></label>
+                      <textarea id="f-proyecto" name="proyecto" maxlength="3000" required placeholder="¿Qué es, en qué etapa está, qué quieres lograr?"></textarea>
+                      <span class="nfb-field-error" role="alert">Cuéntanos aunque sea en dos líneas de qué trata tu proyecto.</span>
+                    </div>
+                    <div class="nfb-field" data-field="problema">
+                      <label for="f-problema">¿Cuál es el principal problema que buscas resolver?</label>
+                      <textarea id="f-problema" name="problema" maxlength="2000"></textarea>
+                    </div>
+                    <div class="nfb-field" data-field="resultado">
+                      <label for="f-resultado">¿Qué resultado esperas obtener?</label>
+                      <textarea id="f-resultado" name="resultado" maxlength="2000"></textarea>
+                    </div>
+                    <div class="nfb-field" data-field="usuarios">
+                      <label for="f-usuarios">¿Quiénes son tus usuarios o clientes?</label>
+                      <textarea id="f-usuarios" name="usuarios" maxlength="2000"></textarea>
+                    </div>
+                    <div class="nfb-field" data-field="existente">
+                      <label for="f-existente">¿Ya cuentas con diseño, branding o algún producto existente?</label>
+                      <textarea id="f-existente" name="existente" maxlength="2000"></textarea>
+                    </div>
+                    <div class="nfb-field" data-field="referencias" style="grid-column: 1 / -1;">
+                      <label for="f-referencias">¿Existen referencias o proyectos que te gusten?</label>
+                      <textarea id="f-referencias" name="referencias" maxlength="2000" placeholder="Links, marcas o productos que admiras"></textarea>
+                    </div>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend class="nfb-eyebrow">Alcance y tiempos</legend>
+                  <div class="nfb-form-grid">
+                    <div class="nfb-field" data-field="inicio">
+                      <label for="f-inicio">¿Cuándo te gustaría comenzar?</label>
+                      <input id="f-inicio" name="inicio" type="text" maxlength="120" placeholder="Ej. lo antes posible, en agosto…" />
+                    </div>
+                    <div class="nfb-field" data-field="lanzamiento">
+                      <label for="f-lanzamiento">¿Existe una fecha ideal de lanzamiento?</label>
+                      <input id="f-lanzamiento" name="lanzamiento" type="text" maxlength="120" placeholder="Ej. antes de diciembre" />
+                    </div>
+                  </div>
+                  <div class="nfb-field" data-field="presupuesto">
+                    <label id="l-presupuesto">Presupuesto estimado <span class="req" aria-hidden="true">*</span></label>
+                    <div class="nfb-pills" role="radiogroup" aria-labelledby="l-presupuesto">
+                      {
+                        budgetOptions.map((b) => (
+                          <label class="nfb-pill">
+                            <input type="radio" name="presupuesto" value={b} />
+                            <span>{b}</span>
+                          </label>
+                        ))
+                      }
+                    </div>
+                    <span class="nfb-field-error" role="alert">Elige un rango — “Aún no lo he definido” también cuenta.</span>
+                  </div>
+                </fieldset>
+
+                <fieldset>
+                  <legend class="nfb-eyebrow">Algo más</legend>
+                  <div class="nfb-form-grid">
+                    <div class="nfb-field" data-field="extra">
+                      <label for="f-extra">¿Hay algo más que debamos saber?</label>
+                      <textarea id="f-extra" name="extra" maxlength="2000"></textarea>
+                    </div>
+                    <div class="nfb-field" data-field="origen">
+                      <label for="f-origen">¿Cómo conociste No Flag Brand?</label>
+                      <input id="f-origen" name="origen" type="text" maxlength="200" placeholder="Recomendación, redes, Google…" />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <!-- Honeypot antispam: invisible para humanos -->
+                <div class="nfb-hp" aria-hidden="true">
+                  <label for="f-hp">No llenes este campo</label>
+                  <input id="f-hp" name="nfb_hp" type="text" tabindex="-1" autocomplete="off" />
+                </div>
+
+                <div class="nfb-consent-wrap nfb-field" data-field="consentimiento">
+                  <label class="nfb-consent">
+                    <input type="checkbox" name="consentimiento" value="si" required />
+                    <span>
+                      He leído y acepto el
+                      <a href="#" id="nfb-privacy-link">aviso de privacidad</a>
+                      y autorizo que me contacten para conversar sobre este proyecto.
+                    </span>
+                  </label>
+                  <span class="nfb-field-error" role="alert">Necesitamos tu autorización para poder contactarte.</span>
+                </div>
+
+                <div class="nfb-form-footer">
+                  <button type="submit" class="nfb-btn nfb-btn-primary" id="nfb-submit">Enviar mi proyecto</button>
+                  <span class="nfb-form-status" id="nfb-status" role="status" aria-live="polite"></span>
+                </div>
+              </div>
+            </form>
+
+            <div class="nfb-form-done" id="nfb-done" tabindex="-1">
+              <div class="check" aria-hidden="true">✓</div>
+              <h3 class="nfb-h2" style="max-width: none;">Gracias por compartir tu proyecto.</h3>
+              <p>
+                Revisaremos la información y te contactaremos para conocer más detalles y definir los siguientes
+                pasos.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ 9. CTA FINAL ============ -->
+      <section class="nfb-cta">
+        <div class="nfb-cta-glow" aria-hidden="true"></div>
+        <div class="nfb-container" data-nfb-reveal>
+          <span class="nfb-eyebrow">Empecemos</span>
+          <h2 class="nfb-h2">Las buenas ideas necesitan al equipo correcto.</h2>
+          <p class="nfb-lead nfb-muted">
+            Cuéntanos qué estás construyendo y descubramos juntos la mejor manera de hacerlo realidad.
+          </p>
+          <div class="nfb-cta-actions">
+            <a href="#cotizar" class="nfb-btn nfb-btn-primary">Iniciar un proyecto</a>
+            <p class="nfb-cta-alt">
+              ¿Prefieres conversar directamente?
+              <a href="https://www.adancareta.com/letsconnect">Agenda una llamada con Adán.</a>
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============ 10. FOOTER ============ -->
+    <footer class="nfb-footer">
+      <div class="nfb-container">
+        <div class="nfb-footer-grid">
+          <div class="nfb-footer-brand">
+            <img src="/images/noflagbrand-logo-white.svg" alt="No Flag Brand" width="88" height="91" />
+            <p>Estudio de diseño independiente liderado por Adán Careta. Diseño, tecnología, marketing y estrategia bajo una misma dirección.</p>
+          </div>
+          <div>
+            <h4>Estudio</h4>
+            <ul>
+              <li><a href="#servicios">Servicios</a></li>
+              <li><a href="#proyectos">Proyectos</a></li>
+              <li><a href="#equipo">Equipo</a></li>
+              <li><a href="#cotizar">Cotizar</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Contacto</h4>
+            <ul>
+              <li><a href="mailto:design.adan@gmail.com">design.adan@gmail.com</a></li>
+              <li><a href="https://www.adancareta.com">Portafolio de Adán Careta</a></li>
+              <li><a href="https://www.adancareta.com/letsconnect">Agendar una llamada</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4>Social</h4>
+            <ul>
+              <li><a href="https://www.behance.net/eidan" target="_blank" rel="noopener">Behance</a></li>
+              <li><a href="https://www.instagram.com/adancaretadg" target="_blank" rel="noopener">Instagram</a></li>
+              <li><a href="https://www.linkedin.com/in/acareta/" target="_blank" rel="noopener">LinkedIn</a></li>
+              <li><button type="button" id="nfb-privacy-footer">Aviso de privacidad</button></li>
+            </ul>
+          </div>
+        </div>
+        <div class="nfb-footer-bottom">
+          <span>© <span id="nfb-year">2026</span> No Flag Brand · Adán Careta</span>
+          <span>Hecho con criterio, no con plantillas.</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- ============ AVISO DE PRIVACIDAD ============ -->
+    <dialog class="nfb-dialog" id="nfb-privacy">
+      <h3 class="nfb-h3">Aviso de privacidad</h3>
+      <p>
+        Los datos que compartes en este formulario (nombre, contacto e información de tu proyecto) se usan
+        únicamente para responder tu solicitud, preparar una propuesta y dar seguimiento a la conversación.
+      </p>
+      <p>
+        No vendemos ni compartimos tu información con terceros, y puedes pedir su eliminación en cualquier momento
+        escribiendo a design.adan@gmail.com.
+      </p>
+      <button type="button" class="nfb-btn nfb-btn-ghost" id="nfb-privacy-close">Entendido</button>
+    </dialog>
+
+    <script>
+      // ---------- Año dinámico ----------
+      const year = document.getElementById("nfb-year");
+      if (year) year.textContent = String(new Date().getFullYear());
+
+      // ---------- Reveal on scroll (IntersectionObserver, sin GSAP) ----------
+      const revealables = document.querySelectorAll("[data-nfb-reveal]");
+      if ("IntersectionObserver" in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("is-in");
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+        );
+        revealables.forEach((el) => io.observe(el));
+      } else {
+        revealables.forEach((el) => el.classList.add("is-in"));
+      }
+
+      // ---------- Aviso de privacidad ----------
+      const privacyDialog = document.getElementById("nfb-privacy") as HTMLDialogElement | null;
+      const openPrivacy = (e: Event) => {
+        e.preventDefault();
+        privacyDialog?.showModal();
+      };
+      document.getElementById("nfb-privacy-link")?.addEventListener("click", openPrivacy);
+      document.getElementById("nfb-privacy-footer")?.addEventListener("click", openPrivacy);
+      document.getElementById("nfb-privacy-close")?.addEventListener("click", () => privacyDialog?.close());
+
+      // ---------- "Cuéntanos sobre tu proyecto" precarga el servicio ----------
+      document.querySelectorAll<HTMLAnchorElement>("[data-servicio]").forEach((link) => {
+        link.addEventListener("click", () => {
+          const value = link.dataset.servicio;
+          const box = document.querySelector<HTMLInputElement>(
+            `#nfb-form input[name="servicios"][value="${value}"]`
+          );
+          if (box) box.checked = true;
+        });
+      });
+
+      // ---------- Formulario ----------
+      const form = document.getElementById("nfb-form") as HTMLFormElement | null;
+      const submitBtn = document.getElementById("nfb-submit") as HTMLButtonElement | null;
+      const statusEl = document.getElementById("nfb-status");
+      const doneEl = document.getElementById("nfb-done");
+      const loadedAt = Date.now(); // antispam: humanos tardan más de unos segundos
+
+      const setFieldError = (name: string, hasError: boolean) => {
+        const field = form?.querySelector(`[data-field="${name}"]`);
+        field?.classList.toggle("has-error", hasError);
+      };
+
+      const validate = (): string | null => {
+        if (!form) return null;
+        let firstError: string | null = null;
+        const mark = (name: string, ok: boolean) => {
+          setFieldError(name, !ok);
+          if (!ok && !firstError) firstError = name;
+        };
+
+        const nombre = (form.elements.namedItem("nombre") as HTMLInputElement).value.trim();
+        mark("nombre", nombre.length >= 2);
+
+        const email = (form.elements.namedItem("email") as HTMLInputElement).value.trim();
+        mark("email", /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email));
+
+        const servicios = form.querySelectorAll('input[name="servicios"]:checked');
+        mark("servicios", servicios.length > 0);
+
+        const proyecto = (form.elements.namedItem("proyecto") as HTMLTextAreaElement).value.trim();
+        mark("proyecto", proyecto.length >= 10);
+
+        const presupuesto = form.querySelector('input[name="presupuesto"]:checked');
+        mark("presupuesto", Boolean(presupuesto));
+
+        const consent = form.querySelector<HTMLInputElement>('input[name="consentimiento"]');
+        mark("consentimiento", Boolean(consent?.checked));
+
+        return firstError;
+      };
+
+      // Limpia el error del campo en cuanto el usuario lo corrige
+      form?.addEventListener("input", (e) => {
+        const target = e.target as HTMLElement;
+        const field = target.closest("[data-field]");
+        if (field?.classList.contains("has-error")) field.classList.remove("has-error");
+      });
+
+      let sending = false;
+      form?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if (sending || !form || !submitBtn || !statusEl) return;
+
+        statusEl.textContent = "";
+        const firstError = validate();
+        if (firstError) {
+          const el = form.querySelector(`[data-field="${firstError}"]`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          statusEl.textContent = "Revisa los campos marcados antes de enviar.";
+          return;
+        }
+
+        sending = true;
+        submitBtn.disabled = true;
+        const originalLabel = submitBtn.textContent;
+        submitBtn.textContent = "Enviando…";
+
+        const data = new FormData(form);
+        const payload: Record<string, unknown> = {};
+        for (const [key, value] of data.entries()) {
+          if (key === "servicios") continue;
+          payload[key] = String(value);
+        }
+        payload.servicios = Array.from(
+          form.querySelectorAll<HTMLInputElement>('input[name="servicios"]:checked')
+        ).map((c) => c.value);
+        payload.elapsedMs = Date.now() - loadedAt;
+        payload.pagina = location.href;
+
+        try {
+          const res = await fetch("/api/nfb-lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          if (!res.ok) throw new Error(`status-${res.status}`);
+          form.style.display = "none";
+          doneEl?.classList.add("visible");
+          doneEl?.focus();
+          doneEl?.scrollIntoView({ behavior: "smooth", block: "center" });
+        } catch (err) {
+          sending = false;
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalLabel;
+          statusEl.textContent =
+            "No pudimos enviar tu solicitud. Intenta de nuevo o escríbenos por el correo del pie de página.";
+        }
+      });
+    </script>
+  </body>
+</html>
