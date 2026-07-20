@@ -956,12 +956,15 @@ import "../../styles/cotizador.css";
           // El save() de arriba agenda un auto-sync, pero esta versión ya
           // acaba de subirse — cancelarlo evita un POST redundante.
           clearTimeout(syncTimer);
-          url = `${location.origin}/cotizador/ver?id=${encodeURIComponent(id)}`;
+          // `v=2` no lo lee el visor: solo hace que WhatsApp/Slack traten el
+          // link como URL nueva y escaneen el preview actual en vez del que
+          // tenían cacheado de antes del cambio de imagen OG.
+          url = `${location.origin}/cotizador/ver?id=${encodeURIComponent(id)}&v=2`;
         } catch (e) {
           // Sin Supabase configurado (o si el guardado falla por lo que sea):
           // cae de vuelta al link largo de antes, que siempre funciona.
           const token = await encodeQuote(data);
-          url = `${location.origin}/cotizador/ver#q=${token}`;
+          url = `${location.origin}/cotizador/ver?v=2#q=${token}`;
         }
         try {
           await navigator.clipboard.writeText(url);
