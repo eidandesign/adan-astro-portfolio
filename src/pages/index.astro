@@ -99,10 +99,9 @@ const companies = [
     <!-- NAVBAR -->
     <div class="navbar" role="banner">
       <a href="/" aria-current="page" class="brand">
-        <img src="/images/Logo-Adan-Careta.svg" width="14.5" alt="Adan Careta logo" class="brand-logo" />
         <div class="brand-text">
-          <h4 class="title small">Adan Careta</h4>
-          <div class="paragraph small">Designing Solutions</div>
+          <h4 class="title small">Adan Careta H.</h4>
+          <div class="paragraph small">Shaping new ideas, fixing existing.</div>
         </div>
       </a>
 
@@ -121,14 +120,43 @@ const companies = [
 
       <nav role="navigation" class="nav-menu" id="navMenu">
         <div class="nav-items">
-          <a href="#CaseStudies" class="navbar-item">
+          <a href="#CaseStudies" class="navbar-item" data-nav-anim>
             <div class="navbar-item-top">Case Studies</div>
             <div class="navbar-item-bottom">Work Process</div>
           </a>
-          <a href="#letsconnect" class="navbar-item">
+          <a href="#letsconnect" class="navbar-item" data-nav-anim>
             <div class="navbar-item-top">Let&#x27;s Connect</div>
             <div class="navbar-item-bottom">Contact Me</div>
           </a>
+        </div>
+        <!-- Small screens hide the CV button and the social rail in the
+             corner, so the menu is the only place they can live. -->
+        <div class="nav-extras">
+          <a
+            href="https://www.dropbox.com/scl/fi/1w5li3o7ozm1qyjrjgwnq/adancareta-2026.pdf?rlkey=c1qs1j6kbqkxjku0v2s7j7aa6&dl=1"
+            target="_blank"
+            rel="noopener"
+            class="cv-button glass"
+            data-nav-anim>
+            <span>Download CV</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+          </a>
+          <div class="nav-social" data-nav-anim>
+            <a href="https://www.linkedin.com/in/acareta/" target="_blank" rel="noopener" class="social-media---link" aria-label="LinkedIn">
+              <div class="icon-container"><img src="/images/adan-linkedin.svg" loading="lazy" alt="" class="image" /></div>
+            </a>
+            <a href="mailto:design.adan@gmail.com?subject=Hey%20Adan!%20" class="social-media---link" aria-label="Email">
+              <div class="icon-container"><img src="/images/adan-email.svg" loading="lazy" alt="" class="image" /></div>
+            </a>
+            <a href="https://www.behance.net/eidan" target="_blank" rel="noopener" class="social-media---link" aria-label="Behance">
+              <div class="icon-container"><img src="/images/adan-behance.svg" loading="lazy" alt="" class="image" /></div>
+            </a>
+            <a href="https://www.instagram.com/adancaretadg" target="_blank" rel="noopener" class="social-media---link" aria-label="Instagram">
+              <div class="icon-container"><img src="/images/adan-instagram.svg" loading="lazy" alt="" class="image" /></div>
+            </a>
+          </div>
         </div>
       </nav>
     </div>
@@ -137,7 +165,7 @@ const companies = [
     <div class="right-tool">
       <div class="right-panel">
         <div class="mexico">
-          <div class="labels white">Location<br />México</div>
+          <div class="labels white">México City<br />Pacific Center</div>
           <div class="lottie-animation" id="sunLottie"></div>
         </div>
         <div class="timer">
@@ -158,6 +186,19 @@ const companies = [
           <div class="icon-container"><img src="/images/adan-instagram.svg" loading="lazy" alt="" class="image" /></div>
         </a>
       </div>
+      <!-- dl=1 makes Dropbox serve the file directly instead of opening its
+           preview page. -->
+      <a
+        href="https://www.dropbox.com/scl/fi/1w5li3o7ozm1qyjrjgwnq/adancareta-2026.pdf?rlkey=c1qs1j6kbqkxjku0v2s7j7aa6&dl=1"
+        target="_blank"
+        rel="noopener"
+        class="cv-button glass">
+        <span>Download CV</span>
+        <!-- Heroicons: arrow-down-tray -->
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+        </svg>
+      </a>
     </div>
 
     <!-- HERO (desktop) -->
@@ -184,19 +225,26 @@ const companies = [
 
     <!-- HERO (mobile) -->
     <section class="section-hero-mobile">
+      <!-- Outside .flex-block-mobile on purpose: GSAP leaves a transform on
+           that block, and a transformed element becomes the containing block
+           for absolutely positioned descendants — which dragged the glow
+           along with the headline. As a child of the section it stays put. -->
+      <div class="gradiend-background"></div>
       <div class="flex-block-mobile" id="heroBlockMobile">
-        <div class="gradiend-background"></div>
         <div class="line-1">
           <span class="title xxl mobile">Innovative</span>
           <img loading="eager" src="/images/adancareta_1.avif" alt="Adan Careta" class="hero-picture-mobile" />
         </div>
         <div class="div-block-44">
           <span id="typewriter-text-2" class="text-changing">Product</span>
+          <span class="title xxl mobile">Designer</span>
         </div>
-        <span class="title xxl mobile">Designer with</span>
-        <span class="title xxl mobile">Human-Centric Solutions</span>
-        <div class="div-block-2">
-          <div class="paragraph big centered">Helping products grow with AI-enhanced design for smarter, impactful solutions.</div>
+        <span class="title xxl mobile">with Human-Centric</span>
+        <div class="div-block-8">
+          <span class="title xxl mobile">Solutions</span>
+          <div class="div-block-2">
+            <div class="paragraph big">Helping products grow with AI-enhanced design for smarter, impactful solutions.</div>
+          </div>
         </div>
       </div>
     </section>
@@ -248,8 +296,8 @@ const companies = [
         <div class="text-block-2">About</div>
       </div>
       <div class="grid">
-        {aboutItems.map((item) => (
-          <div class="about-me" data-reveal>
+        {aboutItems.map((item, i) => (
+          <div class="about-me" data-stack-card style={`--i:${i}`}>
             <div class="labels">{item.number}<br />‍</div>
             <h3 class="titles medium">{item.title}</h3>
             <p class="paragraph big about">{item.description}</p>
@@ -419,12 +467,15 @@ const companies = [
       function updateMexicoCityTime() {
         const el = document.querySelector("#mexico-time");
         if (!el) return;
-        el.textContent = new Date().toLocaleTimeString("en-US", {
-          timeZone: "America/Mexico_City",
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
+        /* 12-hour clock without the AM/PM suffix, per the header design. */
+        el.textContent = new Date()
+          .toLocaleTimeString("en-US", {
+            timeZone: "America/Mexico_City",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          })
+          .replace(/\s*(AM|PM)$/i, "");
       }
       safeRun("mexico-time", () => {
         updateMexicoCityTime();
@@ -450,18 +501,69 @@ const companies = [
         const menuButton = document.getElementById("menuButton");
         const navMenu = document.getElementById("navMenu");
         if (menuButton && navMenu) {
+          const rows = gsap.utils.toArray<HTMLElement>("[data-nav-anim]", navMenu);
+          let tl: gsap.core.Timeline | null = null;
+
           const setOpen = (open: boolean) => {
-            navMenu.classList.toggle("open", open);
             menuButton.classList.toggle("open", open);
             menuButton.setAttribute("aria-expanded", String(open));
             menuButton.setAttribute("aria-label", open ? "Close menu" : "Open menu");
             document.documentElement.style.overflow = open ? "hidden" : "";
-            if (open && !reduceMotion) {
-              gsap.fromTo(
-                navMenu.querySelectorAll(".navbar-item"),
-                { y: 60, opacity: 0 },
-                { y: 0, opacity: 1, duration: 0.6, stagger: 0.08, ease: "power3.out" }
-              );
+
+            if (reduceMotion) {
+              navMenu.classList.toggle("open", open);
+              return;
+            }
+
+            tl?.kill();
+
+            /* The reveal is a circle centred on the menu button, so the
+               panel looks like it grows out from under the thumb — and
+               clipping the element clips its backdrop-filter with it, so
+               the frost wipes in along the same edge. */
+            const b = menuButton.getBoundingClientRect();
+            const ox = ((b.left + b.width / 2) / window.innerWidth) * 100;
+            const oy = ((b.top + b.height / 2) / window.innerHeight) * 100;
+            const from = `circle(0% at ${ox}% ${oy}%)`;
+            const to = `circle(140% at ${ox}% ${oy}%)`;
+
+            if (open) {
+              navMenu.classList.add("open");
+              tl = gsap
+                .timeline()
+                .fromTo(
+                  navMenu,
+                  { clipPath: from, "--menu-blur": "0px" },
+                  { clipPath: to, "--menu-blur": "30px", duration: 0.75, ease: "power3.inOut" }
+                )
+                .fromTo(
+                  rows,
+                  { y: 48, scale: 0.94, opacity: 0 },
+                  { y: 0, scale: 1, opacity: 1, duration: 0.65, stagger: 0.07, ease: "power3.out" },
+                  0.2
+                );
+            } else {
+              tl = gsap
+                .timeline({
+                  onComplete: () => {
+                    navMenu.classList.remove("open");
+                    gsap.set([navMenu, ...rows], { clearProps: "all" });
+                  },
+                })
+                /* Rows leave bottom-first, the reverse of how they arrived */
+                .to(rows, {
+                  y: 28,
+                  scale: 0.96,
+                  opacity: 0,
+                  duration: 0.32,
+                  stagger: { each: 0.05, from: "end" },
+                  ease: "power2.in",
+                })
+                .to(
+                  navMenu,
+                  { clipPath: from, "--menu-blur": "0px", duration: 0.5, ease: "power3.inOut" },
+                  0.15
+                );
             }
           };
           menuButton.addEventListener("click", () => setOpen(!navMenu.classList.contains("open")));
@@ -493,10 +595,6 @@ const companies = [
               ease: "power3.out",
               delay: 0.15,
             });
-            const pic = visibleHero.querySelector(".hero-picture, .hero-picture-mobile");
-            if (pic) {
-              gsap.from(pic, { scale: 0, rotation: -12, duration: 1.2, ease: "back.out(1.6)", delay: 0.7 });
-            }
           }
         }
         // Fallback: make sure both hero blocks are visible even if detection failed
@@ -508,18 +606,31 @@ const companies = [
       /* ---------- GSAP: gradient blob drift + hero parallax ---------- */
       safeRun("gradient-parallax", () => {
         if (reduceMotion) return;
+        /* Drift stays on the desktop blob only: the mobile/tablet ones carry
+           their placement in a CSS `transform`, which GSAP's x/y would
+           overwrite. Their glow still pulses — opacity is transform-safe. */
         const gradient = document.getElementById("heroGradient");
         if (gradient) {
           gsap.to(gradient, {
-            x: -60,
-            y: 50,
-            scale: 1.1,
-            duration: 7,
+            x: 40,
+            y: -28,
+            scale: 1.08,
+            duration: 9,
             yoyo: true,
             repeat: -1,
             ease: "sine.inOut",
           });
         }
+        /* 9s drift against a 5.5s glow: the periods never line up, so the
+           loop never repeats the same combination — that mismatch is what
+           reads as alive instead of as a looping animation. */
+        gsap.to(".gradiend-background", {
+          opacity: 0.7,
+          duration: 5.5,
+          yoyo: true,
+          repeat: -1,
+          ease: "sine.inOut",
+        });
         document.querySelectorAll<HTMLElement>(".section-hero, .section-hero-mobile").forEach((hero) => {
           const block = hero.querySelector(".flex-block, .flex-block-mobile");
           if (!block) return;
@@ -572,6 +683,43 @@ const companies = [
         }
       });
 
+      /* ---------- GSAP: About — stacked cards recede ---------- */
+      safeRun("about-stack", () => {
+        if (reduceMotion) return;
+        const grid = document.querySelector<HTMLElement>(".section-about-me .grid");
+        const cards = gsap.utils.toArray<HTMLElement>("[data-stack-card]");
+        if (!grid || cards.length < 2) return;
+
+        cards.forEach((card, i) => {
+          const next = cards[i + 1];
+          if (!next) return;
+          /* Sticky elements report a shifted bounding rect once pinned, so
+             the scroll range is derived from offsetTop — pure layout, which
+             sticky never changes — rather than from a live rect. */
+          const nextDocTop = () =>
+            grid.getBoundingClientRect().top + window.scrollY + next.offsetTop;
+          const stickyTop = (el: HTMLElement) => parseFloat(getComputedStyle(el).top) || 0;
+
+          gsap.to(card, {
+            scale: 0.94,
+            "--dim": 0.62,
+            ease: "none",
+            scrollTrigger: {
+              /* Numeric start/end are absolute scroll positions, scoped to
+                 the exact window where the next card overlaps this one:
+                 from its top touching this card's bottom edge, until it
+                 settles into its own pinned slot. Keying off the viewport
+                 instead would start the fade while the card is still alone
+                 on screen. */
+              start: () => nextDocTop() - stickyTop(card) - card.offsetHeight,
+              end: () => nextDocTop() - stickyTop(next),
+              scrub: true,
+              invalidateOnRefresh: true,
+            },
+          });
+        });
+      });
+
       /* ---------- GSAP: generic reveals ---------- */
       safeRun("reveals", () => {
         document.querySelectorAll<HTMLElement>("[data-reveal]").forEach((el) => {
@@ -606,13 +754,26 @@ const companies = [
         if (reduceMotion) return;
         document.querySelectorAll<HTMLElement>("[data-marquee]").forEach((el) => {
           const dir = el.dataset.marquee === "left" ? 1 : -1;
+          /* Travel half the hidden width in each direction, so the whole
+             sentence sweeps through the clip window over the scroll. A flat
+             percentage left the long lines permanently cut off on narrow
+             screens, where the text overflows by more than it ever moved.
+             The floor keeps the original drift where the line already fits. */
+          const travel = () =>
+            Math.max((el.scrollWidth - el.clientWidth) / 2 + 16, el.clientWidth * 0.12);
           gsap.fromTo(
             el,
-            { xPercent: 12 * dir },
+            { x: () => travel() * dir },
             {
-              xPercent: -12 * dir,
+              x: () => -travel() * dir,
               ease: "none",
-              scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true },
+              scrollTrigger: {
+                trigger: el,
+                start: "top bottom",
+                end: "bottom top",
+                scrub: true,
+                invalidateOnRefresh: true,
+              },
             }
           );
         });

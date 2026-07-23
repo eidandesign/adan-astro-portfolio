@@ -69,6 +69,62 @@
   --border-light: #181716;
   --surface-oppositive: #d4d2cf;
   --text-oppostive: #292523;
+
+  /* ---- Liquid glass ---- */
+  /* Dark glass. The effect comes from what you see THROUGH the surface —
+     a strong blur that bends the backdrop — plus a lit rim. No white wash
+     over the face: any surface tint is what made it look milky before. */
+  --glass-bg: rgba(10, 14, 20, 0.34);
+  --glass-blur: blur(22px) saturate(180%);
+  --glass-border: rgba(255, 255, 255, 0.26);
+  /* Rim only: a hairline of light on the top edge, where a real bevel
+     would catch it. Nothing paints across the middle of the panel. */
+  --glass-rim: inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+
+/* ============ LIQUID GLASS ============
+   Three layers only: a dark translucent base, a strong blurred/saturated
+   backdrop, and a hairline border with a lit top rim. Every glass surface
+   shares these tokens so they read as one material. */
+.glass,
+.right-panel,
+.social-media---link {
+  position: relative;
+  background-color: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 0.5px solid var(--glass-border);
+  box-shadow: var(--glass-rim);
+  transition:
+    transform 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.45s ease,
+    background-color 0.45s ease;
+}
+/* No backdrop-filter (older Firefox): fall back to an opaque tint so the
+   text keeps its contrast instead of floating on a transparent panel. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass,
+  .right-panel,
+  .social-media---link {
+    background-color: rgba(12, 16, 21, 0.88);
+  }
+}
+/* Colour wash that drifts behind a glass surface */
+@keyframes glass-drift {
+  0% {
+    background-position: 5% 8%, 95% 92%;
+  }
+  50% {
+    background-position: 38% 22%, 62% 78%;
+  }
+  100% {
+    background-position: 22% 34%, 78% 62%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-menu::before {
+    animation: none;
+  }
 }
 
 * {
@@ -90,6 +146,22 @@ body.body {
      interaction) breaks position:sticky for the quote-grid and about
      sections in this stack. The actual overflow source is fixed at
      the root instead — see .text-field and .div-block-31 > *. */
+}
+
+/* Film grain over the whole page. Lives on body::after so every page gets
+   it without touching markup, and sits above the menu (z 1002) so nothing
+   escapes the texture. `overlay` keeps it light on the dark sections and
+   dark on the light Connect section instead of a flat grey haze. */
+body.body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -284,17 +356,32 @@ img {
 .brand {
   z-index: 1001;
   display: flex;
-  gap: 8px;
   align-items: center;
   position: fixed;
   top: 23px;
   left: 34px;
 }
-.brand-logo {
-  width: 14.5px;
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+/* Wordmark: uppercase + tracking so it reads as a mark rather than a
+   sentence. With no icon beside it the type carries the lockup alone,
+   so the two lines are sized to hang off a shared left edge. */
+.brand-text .title.small {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 22px;
+  line-height: 24px;
 }
 .brand-text .paragraph.small {
   color: var(--text-primary);
+  opacity: 0.72;
+  width: auto;
+  font-size: 14px;
+  line-height: 18px;
+  letter-spacing: 0.01em;
 }
 
 .nav-menu {
@@ -409,9 +496,12 @@ img {
   align-items: flex-end;
 }
 .right-panel {
-  border: 1px solid #ddeaff;
+  align-self: stretch;
   border-radius: 20px;
   padding: 8px 16px;
+}
+.right-panel:hover {
+  border-color: rgba(255, 255, 255, 0.38);
 }
 .mexico {
   display: flex;
@@ -421,6 +511,12 @@ img {
 }
 .labels.white {
   font-family: "Powergrotesk", Arial, sans-serif;
+}
+/* Scoped to the card: .labels.white is also the "Follow" / "Hire toolkit"
+   kicker in the Connect section, which stays uppercase. */
+.right-panel .labels.white {
+  text-transform: none;
+  letter-spacing: 0.3px;
 }
 .lottie-animation {
   width: 40px;
@@ -435,16 +531,56 @@ img {
   align-items: center;
 }
 .social-media---link {
-  border: 1px solid var(--text-primary);
   border-radius: 50%;
   width: 40px;
   height: 40px;
-  transition: transform 0.45s;
   display: block;
 }
 .social-media---link:hover {
-  transform: scale(1.2);
+  transform: scale(1.16) translateY(-2px);
+  background-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.45);
 }
+.social-media---link:active {
+  transform: scale(1.04);
+}
+/* Stretches to the rail's width, which the location card sets — that
+   shared edge is what keeps the three elements reading as one stack. */
+.cv-button {
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 10px 18px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-family: "Powergrotesk", Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.cv-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.cv-button:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.cv-button:active {
+  transform: scale(0.97);
+}
+
+/* Menu-only block (CV + socials). The desktop nav-menu is the horizontal
+   top bar, so this only appears once the menu becomes a panel. */
+.nav-extras {
+  display: none;
+}
+
 .icon-container {
   display: flex;
   justify-content: center;
@@ -483,8 +619,10 @@ img {
   width: 90vh;
   height: 75vh;
   position: absolute;
-  top: -38%;
-  right: 0;
+  /* Pushed up and past the right edge so the glow reads as light coming
+     from the top-right corner rather than sitting behind the headline. */
+  top: -62%;
+  right: -11%;
   pointer-events: none;
 }
 .line-1 {
@@ -702,17 +840,45 @@ img {
   z-index: 1;
   display: grid;
   grid-template-columns: 1fr;
-  gap: 16px;
+  gap: 28px;
   position: relative;
   background-color: var(--surface-background);
 }
+/* Stacking cards. All four share .grid as their containing block, so they
+   can all be stuck at once — each one pins a little lower than the last,
+   which leaves the top edge of the ones underneath visible as a deck.
+   This is pure CSS: without JS the stack still works, GSAP only adds the
+   recede. Wrapping each card in its own slot would break it, since a card
+   can never stick outside its own containing block. */
 .about-me {
   display: flex;
   gap: 80px;
   justify-content: space-between;
-  border-bottom: 1px solid #333;
-  padding: 80px;
+  align-items: flex-start;
+  padding: 56px;
+  position: sticky;
+  top: calc(96px + var(--i, 0) * 18px);
+  min-height: 42vh;
+  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+  background-color: #10151c;
+  box-shadow:
+    var(--glass-rim),
+    0 -12px 44px rgba(0, 0, 0, 0.55);
+  transform-origin: center top;
+  will-change: transform;
+}
+/* Dimming layer. Fading the card itself would drop its opacity as a whole
+   and expose the cards stacked underneath through it; darkening with an
+   opaque overlay keeps each card solid while it recedes. */
+.about-me::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
   background-color: var(--surface-background);
+  opacity: var(--dim, 0);
+  pointer-events: none;
 }
 .about-me .labels {
   width: auto;
@@ -1113,16 +1279,35 @@ html.gsap-failed [data-reveal] {
   .brand {
     top: calc(12px + env(safe-area-inset-top, 0px));
     left: max(16px, env(safe-area-inset-left, 0px));
-    background: rgba(12, 16, 21, 0.6);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0.5px solid var(--glass-border);
+    box-shadow: var(--glass-rim);
     border-radius: 999px;
-    padding: 8px 16px 8px 12px;
+    padding: 8px 18px;
   }
+  /* Same proportions, scaled down so the glass chip stays compact */
+  .brand-text .title.small {
+    font-size: 17px;
+    line-height: 19px;
+  }
+  .brand-text .paragraph.small {
+    font-size: 12px;
+    line-height: 15px;
+  }
+
+  /* Full-screen frosted panel: the page stays faintly visible behind the
+     blur instead of being covered by a flat dark fill. */
   .nav-menu {
-    background-color: var(--surface-background);
+    /* --menu-blur is ramped by GSAP so the frost builds up as the panel
+       opens instead of snapping on. */
+    --menu-blur: 30px;
+    background-color: rgba(12, 16, 21, 0.55);
+    -webkit-backdrop-filter: blur(var(--menu-blur)) saturate(180%);
+    backdrop-filter: blur(var(--menu-blur)) saturate(180%);
     height: 100dvh;
-    padding: 40px 32px calc(40px + env(safe-area-inset-bottom, 0px));
+    padding: 40px 24px calc(40px + env(safe-area-inset-bottom, 0px));
     position: fixed;
     inset: 0;
     display: none;
@@ -1132,21 +1317,94 @@ html.gsap-failed [data-reveal] {
   .nav-menu.open {
     display: block;
   }
+  /* Slow-drifting light wash behind the menu items — the "liquid" part */
+  /* inset:0 (not a negative inset) so the wash never adds scrollable area
+     to the panel — .nav-menu scrolls, and overflow-y:auto forces
+     overflow-x:auto with it. */
+  .nav-menu::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      radial-gradient(closest-side, rgba(12, 19, 151, 0.5), transparent 100%),
+      radial-gradient(closest-side, rgba(216, 72, 43, 0.24), transparent 100%);
+    background-repeat: no-repeat;
+    background-size: 120% 55%, 105% 45%;
+    background-position: 5% 8%, 95% 92%;
+    filter: blur(30px);
+    /* Drifts via background-position, not transform: a transformed pseudo
+       would enlarge the panel's scrollable area. */
+    animation: glass-drift 18s ease-in-out infinite alternate;
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .nav-menu {
+      background-color: var(--surface-background);
+    }
+  }
   .nav-items {
     flex-flow: column;
-    gap: 2px;
+    gap: 28px;
     align-items: flex-start;
-    margin-top: 25vh;
+    margin-top: 15vh;
+    position: relative;
+    z-index: 1;
   }
+  /* Bare type on the frosted panel — no slab behind it. Padding is
+     vertical only so the links sit on the panel's own 24px gutter
+     instead of being indented by a card that no longer exists. */
   .navbar-item {
-    margin-top: 39px;
+    margin-top: 0;
+    position: relative;
+    padding: 6px 0;
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+    transition:
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.4s ease;
+  }
+  .navbar-item:active {
+    transform: scale(0.98);
+    opacity: 0.65;
+  }
+  .nav-extras {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 28px;
+    position: relative;
+    z-index: 1;
+  }
+  .nav-extras .cv-button {
+    align-self: stretch;
+    padding: 16px 22px;
+    font-size: 16px;
+  }
+  .nav-extras .cv-button svg {
+    width: 18px;
+    height: 18px;
+  }
+  .nav-social {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+  .nav-social .social-media---link {
+    width: 48px;
+    height: 48px;
+  }
+  .nav-social .icon-container {
+    height: 48px;
   }
   .navbar-item-top {
-    font-size: clamp(40px, 9vw, 60px);
+    font-size: clamp(34px, 8vw, 56px);
     line-height: 1.15;
   }
   .navbar-item-bottom {
-    font-size: 20px;
+    font-size: 18px;
   }
   .menu-button {
     display: block;
@@ -1156,10 +1414,16 @@ html.gsap-failed [data-reveal] {
     z-index: 1002;
   }
   .menu-wrapper {
-    background: rgba(12, 16, 21, 0.6);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    background-color: var(--glass-bg);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0.5px solid var(--glass-border);
+    box-shadow: var(--glass-rim);
     border-radius: 999px;
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .menu-button:active .menu-wrapper {
+    transform: scale(0.92);
   }
   /* Location / clock rail: anchor it to the page (not the viewport) below
      the header so it never collides with the menu button, and scrolls away. */
@@ -1204,9 +1468,10 @@ html.gsap-failed [data-reveal] {
     max-width: none;
     padding: 0 24px;
   }
+  /* Card needs its inset back: the old flat rows sat flush to the gutter,
+     but a bordered card reads wrong with text touching its edge. */
   .about-me {
-    padding-left: 0;
-    padding-right: 0;
+    padding: 40px 36px;
     gap: 27px;
   }
   .section-studies {
@@ -1284,59 +1549,79 @@ html.gsap-failed [data-reveal] {
 
 /* ============ RESPONSIVE — MOBILE ============ */
 @media (max-width: 767px) {
+  /* The brand reads as plain type on the page — no chip — aligned to the
+     hero's 24px gutter. The clock keeps the glass (see .right-panel below). */
+  .brand {
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    top: calc(20px + env(safe-area-inset-top, 0px));
+    left: max(24px, env(safe-area-inset-left, 0px));
+  }
   /* Location / clock: keep it visible but compact, tucked into the
      top-right corner (the hamburger moves to a bottom glass pill, so
      this corner is now free). Social circles are hidden on mobile. */
   .right-tool {
     display: flex;
     position: fixed;
-    top: calc(12px + env(safe-area-inset-top, 0px));
-    right: max(12px, env(safe-area-inset-right, 0px));
+    top: calc(20px + env(safe-area-inset-top, 0px));
+    right: max(24px, env(safe-area-inset-right, 0px));
     margin: 0;
     gap: 0;
   }
-  .right-tool .social-links {
+  /* The corner only has room for the clock; the CV and the social circles
+     move into the menu panel instead (see .nav-extras). */
+  .right-tool .social-links,
+  .right-tool .cv-button {
     display: none;
   }
+  /* Compact glass card — same material as everywhere else. */
   .right-panel {
-    padding: 6px 12px;
-    border-radius: 14px;
-    background: rgba(12, 16, 21, 0.5);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
+    padding: 10px 16px 12px;
+    border-radius: 20px;
   }
   .right-panel .mexico {
-    gap: 8px;
+    gap: 12px;
   }
   .right-panel .labels.white {
-    font-size: 9px;
-    line-height: 12px;
+    font-size: 11px;
+    line-height: 14px;
   }
   .right-panel .lottie-animation {
-    width: 22px;
+    width: 30px;
   }
   .right-panel .titles-medium {
-    font-size: 18px;
-    line-height: 20px;
+    font-size: 26px;
+    line-height: 28px;
   }
 
-  /* Hero: left-aligned editorial layout with a large portrait tucked
-     into the top-right, matching the live reference. svh keeps the
-     height stable against the iOS URL bar. The reduced min-height lets
-     the next section's video peek up at the bottom of the viewport. */
+  /* Hero: centred editorial block. Each headline line is its own row and
+     the intro paragraph sits beside "Solutions" rather than under the
+     whole headline. svh keeps the height stable against the iOS URL bar;
+     the shorter min-height lets the video section rise into view. */
   .section-hero-mobile {
     height: auto;
-    min-height: 82svh;
+    min-height: 58svh;
     margin-top: 0;
-    padding: calc(104px + env(safe-area-inset-top, 0px)) 24px 24px;
+    /* svh-relative top inset: pushes the headline block down toward the
+       middle of the hero and scales with the screen instead of pinning a
+       px gap that would swallow short viewports. */
+    padding: calc(20svh + env(safe-area-inset-top, 0px)) 20px 12px;
     justify-content: flex-start;
+    position: relative;
   }
+  /* static, so the glow below anchors to the section instead of to this
+     block — otherwise it slides down with the headline. */
   .flex-block-mobile {
     margin-top: 0;
     width: 100%;
     flex: 1;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
+    position: static;
   }
   /* Keep every headline/paragraph above the gradient glow (the mobile
      spans don't carry the .hero-line z-index the desktop lines do). */
@@ -1345,59 +1630,91 @@ html.gsap-failed [data-reveal] {
     z-index: 1;
   }
   .title.xxl.mobile {
-    text-align: left;
-    align-self: stretch;
+    text-align: center;
+    align-self: auto;
     margin: 0;
-    font-size: clamp(34px, 11.2vw, 56px);
-    line-height: 1.08;
+    font-size: clamp(25px, 8.2vw, 40px);
+    line-height: 1.14;
   }
+  /* Full-width row with centred text: the portrait is absolutely placed
+     against this row's right edge, so the row has to span the block or
+     the picture lands in the middle of the headline. */
   .line-1 {
     padding-right: 0;
     align-self: stretch;
-    justify-content: flex-start;
+    justify-content: center;
     position: relative;
   }
-  /* Larger portrait overlapping the top-right of the headline */
+  /* "Innovative" sits left of the other lines. The margin is inside the
+     centring, so flex shifts the word left by half of it. */
+  .line-1 .title.xxl.mobile {
+    margin-right: 12%;
+    position: relative;
+    z-index: 1;
+  }
+  /* Portrait behind the headline: z-index 0 puts it under "Innovative",
+     and because .div-block-44 comes later in the DOM at the same level,
+     the "Designer" glyphs also paint over the bottom of the photo. */
   .hero-picture-mobile {
-    width: clamp(120px, 40vw, 190px);
+    width: clamp(112px, 33vw, 168px);
     margin-left: 0;
-    top: calc(-28% - 64px);
+    top: auto;
+    bottom: -56px;
     left: auto;
-    right: -8px;
-    z-index: 2;
+    right: 1%;
+    z-index: 0;
   }
   /* Blue glow anchored to the top-right corner behind the portrait */
   .gradiend-background {
     align-self: auto;
-    width: min(135vw, 720px);
-    height: min(78vh, 720px);
+    /* Sized so the core lands in the top-right corner (~78% across, ~8%
+       down). A wider blob spreads its centre back to the middle of the
+       screen no matter how far it is translated. */
+    width: min(120vw, 620px);
+    height: min(65vh, 620px);
     top: 0;
     left: auto;
     right: 0;
-    transform: translate(26%, -32%);
+    transform: translate(32%, -38%);
     background: radial-gradient(
       closest-side,
-      rgba(12, 19, 151, 0.82),
-      rgba(12, 19, 151, 0.4) 42%,
-      rgba(12, 19, 151, 0) 70%
+      rgba(12, 19, 151, 1),
+      rgba(12, 19, 151, 0.82) 38%,
+      rgba(12, 19, 151, 0.34) 62%,
+      rgba(12, 19, 151, 0) 80%
     );
   }
+  /* Line 2: the typewriter word and "Designer" share a row */
   .div-block-44 {
     min-height: 0;
-    align-self: flex-start;
+    align-self: auto;
+    flex: 0 0 auto;
+    justify-content: center;
+    align-items: baseline;
+    gap: 10px;
   }
-  .div-block-2 {
-    width: 100%;
-    max-width: none;
-    margin-top: 20px;
-    align-self: stretch;
+  /* Last line: "Solutions" with the intro paragraph set beside it */
+  .flex-block-mobile .div-block-8 {
+    align-self: auto;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 2px;
   }
-  .flex-block-mobile .paragraph.big.centered {
+  .flex-block-mobile .div-block-2 {
+    width: auto;
+    max-width: 47%;
+    margin-top: 5px;
+    align-self: auto;
+  }
+  .flex-block-mobile .paragraph.big {
     text-align: left;
+    font-size: 14px;
+    line-height: 20px;
   }
   .text-changing {
-    font-size: clamp(36px, 12vw, 60px);
-    line-height: 1.08;
+    font-size: clamp(25px, 8.2vw, 40px);
+    line-height: 1.14;
     padding-bottom: 0;
   }
 
@@ -1421,38 +1738,10 @@ html.gsap-failed [data-reveal] {
     display: flex;
     align-items: center;
     justify-content: center;
-    background:
-      linear-gradient(
-        145deg,
-        rgba(255, 255, 255, 0.22),
-        rgba(255, 255, 255, 0.04) 46%,
-        rgba(255, 255, 255, 0.12)
-      );
-    -webkit-backdrop-filter: blur(18px) saturate(200%) brightness(1.08);
-    backdrop-filter: blur(18px) saturate(200%) brightness(1.08);
-    border: 0.5px solid rgba(255, 255, 255, 0.35);
-    box-shadow:
-      0 6px 20px rgba(0, 0, 0, 0.35),
-      0 1px 3px rgba(0, 0, 0, 0.2),
-      inset 0 1px 1px rgba(255, 255, 255, 0.65),
-      inset 0 -6px 10px rgba(255, 255, 255, 0.06),
-      inset 0 0 0 0.5px rgba(255, 255, 255, 0.12);
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    background-color: rgba(255, 255, 255, 0.06);
+    /* Inherits the shared glass tint/blur/border/shadow from the 991px
+       block; only the circular geometry changes here. */
   }
-  /* Specular top highlight — the glossy "liquid glass" sheen */
-  .menu-wrapper::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: radial-gradient(
-      120% 80% at 50% -10%,
-      rgba(255, 255, 255, 0.55),
-      rgba(255, 255, 255, 0) 55%
-    );
-    pointer-events: none;
-  }
-  /* Keep the icon bars crisp above the glass layers */
   /* Icons stay above the glass sheen (::before) */
   .menu-wrapper svg {
     z-index: 1;
@@ -1492,8 +1781,10 @@ html.gsap-failed [data-reveal] {
   .about-me {
     flex-flow: column;
     gap: 8px;
-    padding-top: 40px;
-    padding-bottom: 48px;
+    padding: 32px 24px 36px;
+    top: calc(80px + var(--i, 0) * 12px);
+    min-height: 0;
+    border-radius: 24px;
   }
   .about-me .titles.medium {
     width: 100%;
@@ -1561,14 +1852,52 @@ html.gsap-failed [data-reveal] {
     padding: 14px 24px;
     font-size: 16px;
   }
-  /* Sticky quote grid: shorter pin + roomier center cells */
+  /* Sticky quote grid. The desktop 4-column proportions collapsed the
+     side cells to 60–90px here, and `object-fit: cover` then cropped
+     those images down to unreadable vertical slivers. On a phone the
+     grid is rebuilt instead: three equal thumbnails across the top, the
+     video full-width under them, the quote below. Placement is explicit
+     because the desktop filler cells are hidden and auto-flow would
+     otherwise reshuffle everything. */
   .quote-section {
     height: 350svh;
   }
   .quick-stack {
-    grid-template-columns: 0.6fr 0.4fr 1.6fr 0.9fr;
-    padding: 12px;
-    row-gap: 6px;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: 17svh minmax(32svh, 1fr) auto;
+    /* Bottom padding clears the floating menu pill, which otherwise sits
+       on top of the attribution line. */
+    padding: 12px 12px calc(92px + env(safe-area-inset-bottom, 0px));
+    column-gap: 6px;
+    row-gap: 10px;
+  }
+  .qs-cell.cell-3,
+  .qs-cell.cell-5,
+  .qs-cell.span-2:not([data-qs]) {
+    display: none;
+  }
+  .qs-cell[data-qs="left"] {
+    grid-area: 1 / 1 / 2 / 2;
+  }
+  .qs-cell[data-qs="bottom"] {
+    grid-area: 1 / 2 / 2 / 3;
+  }
+  .qs-cell[data-qs="right"] {
+    grid-area: 1 / 3 / 2 / 4;
+  }
+  .qs-cell[data-qs="video"] {
+    grid-area: 2 / 1 / 3 / 4;
+  }
+  .qs-cell[data-qs="quote"] {
+    grid-area: 3 / 1 / 4 / 4;
+    justify-content: flex-start;
+  }
+  /* Near-square thumbs: a tall box would crop these landscape shots
+     back into slivers, which is the bug being fixed. */
+  .qs-cell[data-qs="left"],
+  .qs-cell[data-qs="bottom"],
+  .qs-cell[data-qs="right"] {
+    justify-content: stretch;
   }
   .div-block-43 {
     width: 100%;
